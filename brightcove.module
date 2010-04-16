@@ -11,3 +11,41 @@
   * 
   * Module development sponsored by Brightcove, Inc.
   */
+
+// A name of Echove library folder, to be saved in sites/all/libraries.
+define('ECHOVE_LIBRARY', 'echove');
+
+/**
+  * Settings needed:
+  *  - API key
+  *  - Allow public videos
+  */
+
+/**
+ * Implementation of hook_menu().
+ */
+function brightcove_menu() {
+  $items['admin/settings/brightcove'] = array(
+    'title' => 'Brightcove settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('brightcove_admin_settings'),
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer brightcove settings'),
+    'file' => 'brightcove.admin.inc',
+  );
+  return $items;
+}
+
+/**
+  * Implementation of hook_perm().
+  */
+function brightcove_perm() {
+  return array('administer brightcove settings');
+}
+
+/**
+  * Include all Echove SDK files.
+  */
+function _brightcove_include() {
+  include_once libraries_get_path('echove') . '/echove.php';
+}
