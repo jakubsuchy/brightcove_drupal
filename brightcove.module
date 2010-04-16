@@ -1,0 +1,13 @@
+<?php
+
+/**
+  * @file
+  * Brightcove module is an integration layer between any modules using
+  * Brightcove API. It makes all necessary checks for the API and makes
+  * settings available to the user.
+  *
+  * @author
+  * Jakub Suchy <jakub@dynamiteheads.com>
+  * 
+  * Module development sponsored by Brightcove, Inc.
+  */
