@@ -1,4 +1,9 @@
 <?php
+/*
+   http://docs.brightcove.com/en/media/
+   http://support.brightcove.com/en/docs/category/players
+   http://support.brightcove.com/en/docs/media-api-error-message-reference
+   */
 
 /**
   * @file
@@ -46,6 +51,36 @@ function brightcove_perm() {
 /**
   * Include all Echove SDK files.
   */
-function _brightcove_include() {
+function _brightcove_initialize() {
   include_once libraries_get_path('echove') . '/echove.php';
+
+  $read_token = variable_get('brightcove_read_api_key', '');
+  $write_token = variable_get('brightcove_write_api_key', '');
+
+  if (empty($read_token)) { 
+    drupal_set_message(t('Cannot initialize Brightcove API. Contact site administrators.'));
+    watchdog('brightcove', 'Brightcove Read API keys not found, cannot initialize Echove SDK.', array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+
+  $bc = new Echove($read_token, $write_token);
+
+  return $bc;
+}
+
+
+/**
+  * Check a set of API keys to determine write access to Brightcove Studio.
+  * Only customers with Professional and higher accounts have write access.
+  *
+  * @return
+  *  TRUE for write access allowed.
+  *  FALSE for write access forbidden.
+  */
+function brightcove_write_api_access() {
+  if (variable_get('brightcove_write_api_key', '')) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
 }

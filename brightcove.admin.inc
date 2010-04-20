@@ -14,13 +14,19 @@
  */
 function brightcove_admin_settings() {
 
-  $form['brightcove_api_key'] = array(
+  $form['brightcove_read_api_key'] = array(
     '#type' => 'textfield',
-    '#title' => t('Brightcove API key'),
-    '#size' => 80,
+    '#title' => t('Brightcove Read API key'),
     '#maxlength' => 255,
-    '#default_value' => variable_get('brightcove_api_key', ''),
-    '#description' => t('A Brightcove API key according to your account at Brightcove Studio. Please check at <a href="http://my.brightcove.com">Brightcove studio</a> page.'),
+    '#default_value' => variable_get('brightcove_read_api_key', ''),
+    '#description' => t('A Brightcove Read API key according to your account at Brightcove Studio. Please check at <a href="http://my.brightcove.com">Brightcove studio</a> page.'),
+  );
+  $form['brightcove_write_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Brightcove Write API key'),
+    '#maxlength' => 255,
+    '#default_value' => variable_get('brightcove_write_api_key', ''),
+    '#description' => t('A Brightcove Write API key according to your account at Brightcove Studio. Please check at <a href="http://my.brightcove.com">Brightcove studio</a> page. <strong>Requires at least a Professional account</strong>.'),
   );
 
   $form['brightcove_allow_public'] = array(
