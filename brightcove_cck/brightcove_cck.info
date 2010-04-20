@@ -1,0 +1,6 @@
+name = Brightcove CCK Field
+description = A CCK field allowing to attach videos to nodes.
+core = 6.x
+
+dependencies[] = brightcove
+dependencies[] = content

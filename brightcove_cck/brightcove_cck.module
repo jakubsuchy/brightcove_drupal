@@ -1,0 +1,290 @@
+<?php
+
+/**
+  * @file
+  * Brightcove CCK module provides a Content Construction Kit module to
+  * developers, allowing them to browse videos in their Brightcove Studio and
+  * upload them.
+  *
+  * @author
+  * Jakub Suchy <jakub@dynamiteheads.com>, Andrew Burcin <andrew@dynamiteheads.com>
+  * 
+  * Module development sponsored by Brightcove, Inc.
+  */
+
+function brightcove_cck_menu() {
+  $items = array();
+  $items['brightcove_cck/autocomplete'] = array(
+      'title' => 'Brightcove CCK autocomplete',
+      'page callback' => 'brightcove_cck_autocomplete',
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK
+      );
+  return $items;
+}
+
+function brightcove_cck_autocomplete($field_name, $string = '') {
+  $bc = _brightcove_initialize();
+  $matches = array();
+
+  try {
+    $result = $bc->find('find_videos_by_text', array('text' => $string));
+  } catch (Exception $error) {
+    watchdog('brightcove', 'Finding videos in autocomplete failed.', array(), WATCHDOG_ERROR);
+  }
+  foreach($result as $video) {
+    $matches[check_plain($video->name) . ' [id:' . $video->id . ']'] = check_plain($video->name) . ' [id: ' . $video->id . ']';
+  }
+  return drupal_json($matches);
+}
+
+
+/**
+ * Implementation of hook_field_info().
+ */
+function brightcove_cck_field_info() {
+  return array(
+    'brightcove_video' => array(
+      'label' => t('Brightcove Video'),
+      'description' => t('Browse and upload videos at Brightcove.'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_field_settings().
+ */
+function brightcove_cck_field_settings($op, $field) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+
+      // Only allow Upload if this site has Write API keys.
+      if (brightcove_write_api_access()) {
+        $form['allow_upload'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Allow upload'),
+          '#description' => t('Whether to allow uploading new videos to Brightcove Studio from this field. Requires Write API keys with at least a <a href="http://www.brightcove.com/en/video-platform/editions-and-pricing">Professional account</a>.'),
+          '#default_value' => $field['allow_upload'],
+        );
+      }
+      return $form;
+
+    case 'save':
+      $settings = array('allow_upload');
+      return $settings;
+
+    case 'database columns':
+      $columns = array(
+        'video_id' => array('type' => 'varchar', 'length' => 15, 'not null' => FALSE, 'index' => TRUE),
+      );
+      return $columns;
+
+    case 'views data':
+      return ;
+  }
+}
+
+/**
+ * Implementation of hook_field().
+ */
+function brightcove_cck_field($op, &$node, $field, &$items, $teaser, $page) {
+  switch ($op) {
+    case 'validate':
+        foreach ($items as $delta => $item) {
+          if (is_array($item)) {
+            $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
+            if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
+            if (!empty($item['uid'])) {
+              $bc = _brightcove_initialize();
+              try {
+                $video = $bc->find('find_video_by_id', $item['video_id']);
+              } catch (Exception $error) {
+                form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+                watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
+              }
+              if (empty($video->id)) {
+                form_set_error($error_element, t('%name: invalid video.', array('%name' => t($field['widget']['label']))));
+              }
+            }
+          }
+        }
+      return $items;
+  }
+}
+
+function  brightcove_cck_content_is_empty($item, $field) {
+  return FALSE;
+}
+
+function brightcove_cck_browser_validate($element, &$form_state) {
+  $field_name = $element['#field_name'];
+  $type_name = $element['#type_name'];
+  $field = content_fields($field_name, $type_name);
+  $field_key = $element['#columns'][0];
+  $value = $element['#value'][$field_key];
+  // Assign ID to the value.
+  // 231289 [id:72431493001]
+  preg_match('/\[id:([^\[]*)\]$/', $value, $matches);
+  $id = $matches[1];
+  if (is_numeric($id)) {
+    // Matched ID, check if the video exists.
+    $bc = _brightcove_initialize();
+    try {
+      $video = $bc->find('find_video_by_id', $id);
+    } catch (Exception $error) {
+      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+      watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
+    }
+    if ($video->id != $id) {
+      form_error($element[$field_key], t('%name: Found no valid video with that name', array('%name' => t($field['widget']['label']))));
+    }
+  } else {
+    // Didn't match ID, try looking up the video at BC.
+    $bc = _brightcove_initialize();
+    try {
+      $result = $bc->find('find_videos_by_text', array('text' => $value));
+    } catch (Exception $error) {
+      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+      watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
+    }
+    if (count($result) > 1) {
+      // This title is ambiguous.
+      form_error($element[$field_key], t('%name: Video title %title matched more than one video. In case of doubt, use text "title [id:ID_OF_THE_VIDEO]"', array('%title', $value, '%name' => t($field['widget']['label']))));
+    } else if (count($result) == 0) {
+      // No video found.
+      form_error($element[$field_key], t('%name: Found no valid video with that name', array('%name' => t($field['widget']['label']))));
+    } else {
+      $id = $result[0]->id;
+    }
+  }
+  form_set_value($element, $id, $form_state);
+}
+
+
+function brightcove_cck_field_formatter_info() {
+  return array(
+      'default' => array(
+        'label' => t('Default'),
+        'field types' => array('brightcove_video'),
+        ),
+      );
+}
+
+function theme_brightcove_cck_formatter_default($element) {
+  dpm($element);
+  return 'ahoj';
+}
+/**
+ * Implementation of hook_widget_info().
+ *
+ * Here we indicate that the content module will handle
+ * the default value and multiple values for these widgets.
+ *
+ * Callbacks can be omitted if default handing is used.
+ * They're included here just so this module can be used
+ * as an example for custom modules that might do things
+ * differently.
+ */
+function brightcove_cck_widget_info() {
+  return array(
+    'brightcove_cck_browser' => array(
+      'label' => t('Video browser & upload'),
+      'field types' => array('brightcove_video'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array(
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+    ),
+  );
+}
+
+function brightcove_cck_elements() {
+  return array(
+      'brightcove_cck_browser' => array(
+        '#input' => TRUE,
+        '#columns' => array('video_id'), '#delta' => 0,
+        '#process' => array('brightcove_cck_browser_process'),
+        '#autocomplete_path' => FALSE,
+        ),
+      );
+}
+
+function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
+  dpm($element);
+
+ dpm($video);
+
+  $field_key  = $element['#columns'][0];
+
+  $element[$field_key] = array(
+      '#type' => 'text_textfield',
+      '#default_value' => isset($element['#value']) ? $element['#value'] : '',
+      '#autocomplete_path' => 'brightcove_cck/autocomplete/'. $element['#field_name'],
+      // The following values were set by the content module and need
+      // to be passed down to the nested element.
+      '#title' => $element['#title'],
+      '#required' => $element['#required'],
+      '#description' => $element['#description'],
+      '#field_name' => $element['#field_name'],
+      '#type_name' => $element['#type_name'],
+      '#delta' => $element['#delta'],
+      '#columns' => $element['#columns'],
+      );
+  if (empty($element[$field_key]['#element_validate'])) {
+    $element[$field_key]['#element_validate'] = array();
+  }
+  array_unshift($element[$field_key]['#element_validate'], 'brightcove_cck_browser_validate');
+
+  // Used so that hook_field('validate') knows where to flag an error.
+  $element['_error_element'] = array(
+      '#type' => 'value',
+      // Wrapping the element around a text_textfield element creates a
+      // nested element, so the final id will look like 'field-name-0-uid-uid'.
+      '#value' => implode('][', array_merge($element['#parents'], array($field_key, $field_key))),
+      );
+  return $element;
+
+}
+
+function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  switch ($field['widget']['type']) {
+    case 'brightcove_cck_browser':
+      $element = array(
+          '#type' => 'brightcove_cck_browser',
+          '#default_value' => isset($items[$delta]) ? $items[$delta] : NULL,
+          '#value_callback' => 'brightcove_cck_browser_value',
+          );
+      break;
+  }
+  return $element;
+}
+
+function brightcove_cck_browser_value($element, $edit = FALSE) {
+  $field_key  = $element['#columns'][0];
+  if (!empty($element['#default_value'][$field_key])) {
+    try {
+      $bc = _brightcove_initialize();
+      $video = $bc->find('find_video_by_id', $element['#default_value'][$field_key]);
+    } catch (Exception $error) {
+      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+      watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
+    }
+    if ($video->id) {
+      return array($field_key => check_plain($video->name) . ' [id:' . $video->id . ']');
+    }
+  }
+  return array($field_key => NULL);
+}
+
+function theme_brightcove_cck_browser($element) {
+    return $element['#children'];
+}
+
+function brightcove_cck_theme() {
+  return array(
+      'brightcove_cck_browser' => array(
+        'arguments' => array('element' => NULL),
+        ),
+      );
+}
