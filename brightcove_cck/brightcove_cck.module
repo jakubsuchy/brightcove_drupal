@@ -165,15 +165,23 @@ function brightcove_cck_browser_validate($element, &$form_state) {
 function brightcove_cck_field_formatter_info() {
   return array(
       'default' => array(
-        'label' => t('Default'),
+        'label' => t('Standard video player'),
         'field types' => array('brightcove_video'),
+        'multiple values' => CONTENT_HANDLE_CORE,
         ),
       );
 }
 
 function theme_brightcove_cck_formatter_default($element) {
-  dpm($element);
-  return 'ahoj';
+  if (isset($element['#item']['video_id'])) {
+     $bc = _brightcove_initialize();
+     $script = 'document.write(unescape("%3Cscript src=\'http://admin.brightcove.com/js/BrightcoveExperiences.js\' type=\'text/javascript\'%3E%3C/script%3E"));';
+     drupal_add_js($script, 'inline', 'header');
+     $player = $bc->embed('video',variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);
+     return $player;
+  } else {
+    return FALSE;
+  }
 }
 /**
  * Implementation of hook_widget_info().
@@ -211,9 +219,6 @@ function brightcove_cck_elements() {
 }
 
 function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
-  dpm($element);
-
- dpm($video);
 
   $field_key  = $element['#columns'][0];
 
@@ -286,5 +291,9 @@ function brightcove_cck_theme() {
       'brightcove_cck_browser' => array(
         'arguments' => array('element' => NULL),
         ),
+      'brightcove_cck_formatter_default' => array(
+        'arguments' => array('element'),
+        ),
+
       );
 }
