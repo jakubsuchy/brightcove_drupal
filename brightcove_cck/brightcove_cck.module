@@ -12,6 +12,9 @@
   * Module development sponsored by Brightcove, Inc.
   */
 
+/**
+  * Implementation of hook_menu().
+  */
 function brightcove_cck_menu() {
   $items = array();
   $items['brightcove_cck/autocomplete'] = array(
@@ -23,6 +26,16 @@ function brightcove_cck_menu() {
   return $items;
 }
 
+/**
+  * Menu callback for brightcove_cck/autocomplete.
+  *
+  * @param $field_name
+  *  Field name - CCK field name that is requesting autocomplete. Unused, will be utilized to limit access to certain videos for certain fields.
+  * @param $string
+  *  String to search for - will match videos by this text.
+  * @return
+  *  JSON object with matched videos.
+  */
 function brightcove_cck_autocomplete($field_name, $string = '') {
   $bc = _brightcove_initialize();
   $matches = array();
@@ -113,10 +126,16 @@ function brightcove_cck_field($op, &$node, $field, &$items, $teaser, $page) {
   }
 }
 
-function  brightcove_cck_content_is_empty($item, $field) {
+/**
+  * Implementation fo hook_content_is_empty().
+  */
+function brightcove_cck_content_is_empty($item, $field) {
   return FALSE;
 }
 
+/**
+  * Validate callback for the field.
+  */
 function brightcove_cck_browser_validate($element, &$form_state) {
   $field_name = $element['#field_name'];
   $type_name = $element['#type_name'];
@@ -137,7 +156,7 @@ function brightcove_cck_browser_validate($element, &$form_state) {
       watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
     }
     if ($video->id != $id) {
-      form_error($element[$field_key], t('%name: Found no valid video with that name', array('%name' => t($field['widget']['label']))));
+      form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
     }
   } else {
     // Didn't match ID, try looking up the video at BC.
@@ -153,7 +172,7 @@ function brightcove_cck_browser_validate($element, &$form_state) {
       form_error($element[$field_key], t('%name: Video title %title matched more than one video. In case of doubt, use text "title [id:ID_OF_THE_VIDEO]"', array('%title', $value, '%name' => t($field['widget']['label']))));
     } else if (count($result) == 0) {
       // No video found.
-      form_error($element[$field_key], t('%name: Found no valid video with that name', array('%name' => t($field['widget']['label']))));
+      form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
     } else {
       $id = $result[0]->id;
     }
@@ -161,7 +180,9 @@ function brightcove_cck_browser_validate($element, &$form_state) {
   form_set_value($element, $id, $form_state);
 }
 
-
+/**
+  * Implementation of hook_formatter_info().
+  */
 function brightcove_cck_field_formatter_info() {
   return array(
       'default' => array(
@@ -172,27 +193,30 @@ function brightcove_cck_field_formatter_info() {
       );
 }
 
+/**
+  * Theme callback for Brightcove CCK formatter.
+  * Returns an embedded player with default site player.
+  *
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Player HTML code.
+  */
 function theme_brightcove_cck_formatter_default($element) {
   if (isset($element['#item']['video_id'])) {
      $bc = _brightcove_initialize();
      $script = 'document.write(unescape("%3Cscript src=\'http://admin.brightcove.com/js/BrightcoveExperiences.js\' type=\'text/javascript\'%3E%3C/script%3E"));';
      drupal_add_js($script, 'inline', 'header');
-     $player = $bc->embed('video',variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);
+     $player = $bc->embed('video', variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);
      return $player;
   } else {
     return FALSE;
   }
 }
+
+
 /**
  * Implementation of hook_widget_info().
- *
- * Here we indicate that the content module will handle
- * the default value and multiple values for these widgets.
- *
- * Callbacks can be omitted if default handing is used.
- * They're included here just so this module can be used
- * as an example for custom modules that might do things
- * differently.
  */
 function brightcove_cck_widget_info() {
   return array(
@@ -207,6 +231,9 @@ function brightcove_cck_widget_info() {
   );
 }
 
+/**
+  * Implementation of hook_elements().
+ */
 function brightcove_cck_elements() {
   return array(
       'brightcove_cck_browser' => array(
@@ -218,6 +245,9 @@ function brightcove_cck_elements() {
       );
 }
 
+/**
+ * Brightcove CCK field form that returns the actual field to the user.
+ */
 function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
 
   $field_key  = $element['#columns'][0];
@@ -252,6 +282,9 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
 
 }
 
+/**
+ * Implementation of hook_widget().
+ */
 function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   switch ($field['widget']['type']) {
     case 'brightcove_cck_browser':
@@ -265,6 +298,10 @@ function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
   return $element;
 }
 
+/**
+ * Callback for Brightcove CCK browser widget.
+ * Will return a field value in "video-name [id:videoId]" format.
+ */
 function brightcove_cck_browser_value($element, $edit = FALSE) {
   $field_key  = $element['#columns'][0];
   if (!empty($element['#default_value'][$field_key])) {
@@ -282,10 +319,16 @@ function brightcove_cck_browser_value($element, $edit = FALSE) {
   return array($field_key => NULL);
 }
 
+/**
+ * Theme function returning a video field.
+ */
 function theme_brightcove_cck_browser($element) {
-    return $element['#children'];
+  return $element['#children'];
 }
 
+/**
+ * Implementation of hook_theme().
+ */
 function brightcove_cck_theme() {
   return array(
       'brightcove_cck_browser' => array(
@@ -294,6 +337,5 @@ function brightcove_cck_theme() {
       'brightcove_cck_formatter_default' => array(
         'arguments' => array('element'),
         ),
-
       );
 }
