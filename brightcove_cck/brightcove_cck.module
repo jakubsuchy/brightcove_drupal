@@ -20,9 +20,17 @@ function brightcove_cck_menu() {
   $items['brightcove_cck/autocomplete'] = array(
       'title' => 'Brightcove CCK autocomplete',
       'page callback' => 'brightcove_cck_autocomplete',
-      'access arguments' => array('access content'),
+      'access arguments' => array('access content'), // TODO: Security - determine access.
       'type' => MENU_CALLBACK
       );
+  $items['brightcove_cck/browse'] = array(
+      'title' => 'Brightcove Videos Browser',
+      'page callback' => 'brightcove_cck_browse',
+      'file' => 'brightcove_cck.browse.inc',
+      'access arguments' => array('access content'), // TODO: Security - determine access.
+      'type' => MENU_CALLBACK
+      );
+
   return $items;
 }
 
@@ -113,7 +121,7 @@ function brightcove_cck_field($op, &$node, $field, &$items, $teaser, $page) {
               try {
                 $video = $bc->find('find_video_by_id', $item['video_id']);
               } catch (Exception $error) {
-                form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+                form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again.'));
                 watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
               }
               if (empty($video->id)) {
@@ -142,39 +150,42 @@ function brightcove_cck_browser_validate($element, &$form_state) {
   $field = content_fields($field_name, $type_name);
   $field_key = $element['#columns'][0];
   $value = $element['#value'][$field_key];
-  // Assign ID to the value.
-  // 231289 [id:72431493001]
-  preg_match('/\[id:([^\[]*)\]$/', $value, $matches);
-  $id = $matches[1];
-  if (is_numeric($id)) {
-    // Matched ID, check if the video exists.
-    $bc = _brightcove_initialize();
-    try {
-      $video = $bc->find('find_video_by_id', $id);
-    } catch (Exception $error) {
-      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
-      watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
-    }
-    if ($video->id != $id) {
-      form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
-    }
-  } else {
-    // Didn't match ID, try looking up the video at BC.
-    $bc = _brightcove_initialize();
-    try {
-      $result = $bc->find('find_videos_by_text', array('text' => $value));
-    } catch (Exception $error) {
-      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
-      watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
-    }
-    if (count($result) > 1) {
-      // This title is ambiguous.
-      form_error($element[$field_key], t('%name: Video title %title matched more than one video. In case of doubt, use text "title [id:ID_OF_THE_VIDEO]"', array('%title', $value, '%name' => t($field['widget']['label']))));
-    } else if (count($result) == 0) {
-      // No video found.
-      form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
+  if (!empty($value)) {
+    // Assign ID to the value.
+    // 231289 [id:72431493001]
+    preg_match('/\[id:([^\[]*)\]$/', $value, $matches);
+    $id = $matches[1];
+
+    if (is_numeric($id)) {
+      // Matched ID, check if the video exists.
+      $bc = _brightcove_initialize();
+      try {
+        $video = $bc->find('find_video_by_id', $id);
+      } catch (Exception $error) {
+        form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again.'));
+        watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
+      }
+      if ($video->id != $id) {
+        form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
+      }
     } else {
-      $id = $result[0]->id;
+      // Didn't match ID, try looking up the video at BC.
+      $bc = _brightcove_initialize();
+      try {
+        $result = $bc->find('find_videos_by_text', array('text' => $value));
+      } catch (Exception $error) {
+        form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+        watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
+      }
+      if (count($result) > 1) {
+        // This title is ambiguous.
+        form_error($element[$field_key], t('%name: Video title %title matched more than one video. In case of doubt, use text "title [id:ID_OF_THE_VIDEO]"', array('%title', $value, '%name' => t($field['widget']['label']))));
+      } else if (count($result) == 0) {
+        // No video found.
+        form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
+      } else {
+        $id = $result[0]->id;
+      }
     }
   }
   form_set_value($element, $id, $form_state);
@@ -247,11 +258,12 @@ function brightcove_cck_elements() {
 
 /**
  * Brightcove CCK field form that returns the actual field to the user.
+ * Parts of this and subsequent JS taken from Nodereference Explorer. Thanks!
  */
 function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
-
   $field_key  = $element['#columns'][0];
 
+      modalframe_parent_js(); //dialog internal area
   $element[$field_key] = array(
       '#type' => 'text_textfield',
       '#default_value' => isset($element['#value']) ? $element['#value'] : '',
@@ -266,6 +278,13 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
       '#delta' => $element['#delta'],
       '#columns' => $element['#columns'],
       );
+  $element['actions']['browse'] = array(
+      '#type' => 'brightcove_cck_browse_button',
+      '#id' => $element['#id'] . '-browse',
+      '#attributes' => array('class' => 'brightcove-cck-browse-button'),
+      '#value' => t('Browse'),
+      );
+
   if (empty($element[$field_key]['#element_validate'])) {
     $element[$field_key]['#element_validate'] = array();
   }
@@ -301,15 +320,17 @@ function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
 /**
  * Callback for Brightcove CCK browser widget.
  * Will return a field value in "video-name [id:videoId]" format.
+ *
  */
 function brightcove_cck_browser_value($element, $edit = FALSE) {
   $field_key  = $element['#columns'][0];
-  if (!empty($element['#default_value'][$field_key])) {
+  $id = $element['#default_value'][$field_key]['video_id'];
+  if (!empty($id)) {
     try {
       $bc = _brightcove_initialize();
-      $video = $bc->find('find_video_by_id', $element['#default_value'][$field_key]);
+      $video = $bc->find('find_video_by_id', $id);
     } catch (Exception $error) {
-      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again.'));
       watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
     }
     if ($video->id) {
@@ -336,6 +357,11 @@ function brightcove_cck_theme() {
         ),
       'brightcove_cck_formatter_default' => array(
         'arguments' => array('element'),
+        ),
+      'brightcove_cck_browse_button' => array(
+        'arguments' => array('element' => NULL),
+        'function' => 'theme_brightcove_cck_browse_button',
+        'file' => 'theme.inc',
         ),
       );
 }

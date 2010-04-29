@@ -29,6 +29,13 @@ function brightcove_admin_settings() {
     '#description' => t('A Brightcove Write API key according to your account at Brightcove Studio. Please check at <a href="http://my.brightcove.com">Brightcove studio</a> page. <strong>Requires at least a Professional account</strong>.'),
   );
 
+  $form['brightcove_player'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Brightcove Player ID'),
+    '#default_value' => variable_get('brightcove_player', ''),
+    '#description' => t('A Brightcove Player ID from BC Studio. Will be used to play all videos.'),
+  );
+
   $form['brightcove_allow_public'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow public videos'),
