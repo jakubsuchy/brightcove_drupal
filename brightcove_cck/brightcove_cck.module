@@ -349,5 +349,14 @@ function brightcove_cck_theme() {
         'function' => 'theme_brightcove_cck_browse_button',
         'file' => 'theme.inc',
         ),
+      'brightcove_cck_browse_item' => array(
+        'arguments' => array('item' => NULL),
+        'file' => 'theme.inc',
+        ),
+      'brightcove_cck_browse_items' => array(
+        'arguments' => array('item' => NULL),
+        'file' => 'theme.inc',
+        ),
+
       );
 }

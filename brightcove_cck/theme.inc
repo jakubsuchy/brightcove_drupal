@@ -41,3 +41,22 @@ function theme_brightcove_cck_formatter_default($element) {
 }
 
 
+function theme_brightcove_cck_browse_item($item) {
+  $image = theme('image', $item['thumbnail'], '', '', NULL, FALSE);
+  $title = $item['title'];
+  return "$title<br />$image";
+}
+function theme_brightcove_cck_browse_items($items) {
+  $rowcount = 0;
+  $activerow = 0;
+  $rows = array();
+  foreach($items as $item) {
+    $themed = theme('brightcove_cck_browse_item', $item);
+    $rowcount++;
+    if ($rowcount == 3) {
+      $activerow++;
+    }
+    $rows[$activerow][] = $themed;
+  }
+  return theme('table', array(), $rows);
+}
