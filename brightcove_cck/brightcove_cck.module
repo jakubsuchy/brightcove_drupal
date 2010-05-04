@@ -266,7 +266,7 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
   $element['actions']['browse'] = array(
     '#type' => 'brightcove_cck_browse_button',
     '#id' => $element['#id'] . '-browse',
-    '#attributes' => array('class' => 'brightcove-cck-browse-button'),
+    '#attributes' => array('class' => 'brightcove-cck-browse-button', 'rel' => $element['#id'] . '-video-id-video-id'),
     '#value' => t('Browse'),
   );
   // TODO: Button for upload, if upload is enabled and allowed.
@@ -309,7 +309,7 @@ function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
  */
 function brightcove_cck_browser_value($element, $edit = FALSE) {
   $field_key  = $element['#columns'][0];
-  $id = $element['#default_value'][$field_key]['video_id'];
+  $id = $element['#default_value'][$field_key];
   if (!empty($id)) {
     try {
       $bc = _brightcove_initialize();
@@ -357,6 +357,51 @@ function brightcove_cck_theme() {
         'arguments' => array('item' => NULL),
         'file' => 'theme.inc',
         ),
+      'brightcove_cck_attach_button' => array(
+        'arguments' => array('video_id' => NULL),
+        'file' => 'theme.inc',
+        ),
 
       );
 }
+
+
+function brightcove_browser_form(&$form_state, $item) {
+  $form['id'] = array(
+      '#type' => 'value',
+      '#value' => $item['video_id'],
+      );
+  $form['title'] = array(
+      '#type' => 'value',
+      '#value' => $item['title'],
+      );
+  $form['text_title'] = array(
+      '#type' => 'item',
+      '#value' => $item['title'],
+      );
+  $form['text_image'] = array(
+      '#type' => 'item',
+      '#value' => theme('image', $item['thumbnail'], '', '', NULL, FALSE),
+      );
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#name' => 'submit-' . $item['video_id'],
+      '#value' => t('Attach'),
+      );
+  $form['#submit'] = array("brightcove_browser_form_submit");
+  return $form;
+}
+function brightcove_browser_form_submit($form, &$form_state) {
+  $return['selected'] = $form_state['values']['title'] . ' [id:' . $form_state['values']['id'] . ']';
+  modalframe_close_dialog($return);
+}
+
+function brightcove_cck_forms() {
+  $args = func_get_args();
+  $form_id = $args[0];
+  if (strpos($form_id, "brightcove_browser_form") === 0) {
+    $forms[$form_id] = array('callback' => 'brightcove_browser_form');
+  }
+  return $forms;
+}
+

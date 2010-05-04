@@ -29,9 +29,7 @@ function theme_brightcove_cck_formatter_default($element) {
     $bc = _brightcove_initialize();
     // We need to write a BC JavaScript to the page, which is not possible
     // with a simple drupal_add_js(), inline is needed.
-    $script = 'document.write(unescape("%3Cscript
-          src=\'http://admin.brightcove.com/js/BrightcoveExperiences.js\'
-          type=\'text/javascript\'%3E%3C/script%3E"));';
+    $script = 'document.write(unescape("%3Cscript src=\'http://admin.brightcove.com/js/BrightcoveExperiences.js\' type=\'text/javascript\'%3E%3C/script%3E"));';
     drupal_add_js($script, 'inline', 'header');
     $player = $bc->embed('video', variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);
     return $player;
@@ -39,12 +37,12 @@ function theme_brightcove_cck_formatter_default($element) {
     return FALSE;
   }
 }
-
-
+function theme_brightcove_cck_attach_button($video_id) {
+  $button = array('#value' => t('Attach'), '#name' => 'attach-' . $video_id, '#id' => 'attach-' . $video_id, '#attributes' => array('class' => 'brightcove-cck-attach-button', 'rel' => $video_id), '#button_type' => 'button');
+  return str_ireplace('type="submit"', 'type="button"', theme('button', $button));
+}
 function theme_brightcove_cck_browse_item($item) {
-  $image = theme('image', $item['thumbnail'], '', '', NULL, FALSE);
-  $title = $item['title'];
-  return "$title<br />$image";
+  return drupal_get_form('brightcove_browser_form' . $item['video_id'], $item);
 }
 function theme_brightcove_cck_browse_items($items) {
   $rowcount = 0;
@@ -53,7 +51,7 @@ function theme_brightcove_cck_browse_items($items) {
   foreach($items as $item) {
     $themed = theme('brightcove_cck_browse_item', $item);
     $rowcount++;
-    if ($rowcount == 3) {
+    if ($rowcount == 4) {
       $activerow++;
     }
     $rows[$activerow][] = $themed;
