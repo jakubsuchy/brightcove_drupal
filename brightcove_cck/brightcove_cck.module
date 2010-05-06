@@ -30,7 +30,18 @@ function brightcove_cck_menu() {
       'access arguments' => array('access content'), // TODO: Security - determine access.
       'type' => MENU_CALLBACK,
       );
+  $items['brightcove_cck/player/%node'] = array(
+      'title' => 'Brightcove Videos Window Player',
+      'page callback' => 'brightcove_cck_player',
+      'access arguments' => array('access content'), // TODO: Security - determine access.
+      'type' => MENU_CALLBACK,
+      );
+
   return $items;
+}
+
+function brightcove_cck_player($node) {
+
 }
 
 /**
@@ -200,13 +211,31 @@ function brightcove_cck_browser_validate($element, &$form_state) {
   * TODO: Different formats - thumbnail with a video to Lightbox - check access
   */
 function brightcove_cck_field_formatter_info() {
-  return array(
+  $formatters = array(
       'default' => array(
         'label' => t('Standard video player'),
         'field types' => array('brightcove_video'),
         'multiple values' => CONTENT_HANDLE_CORE,
         ),
       );
+  if (module_exists('lightbox2')) {
+    $formatters['lightbox2_player'] = array(
+        'label' => t('Default thumbnail -> Lightbox2'),
+        'field types' => array('brightcove_video'),
+        'multiple values' => CONTENT_HANDLE_CORE,
+        );
+    if (module_exists('imagecache')) {
+      $presets = imagecache_presets();
+      foreach($presets as $preset_id => $preset) {
+        $formatters['brightcove_cck_lightbox2_imagecache_' . $preset['presetname']] = array(
+            'label' => t('Imagecache @preset -> Lightbox2', array('@preset' => $preset['presetname'])),
+            'field types' => array('brightcove_video'),
+            'multiple values' => CONTENT_HANDLE_CORE,
+            );
+      }
+    }
+  }
+  return $formatters;
 }
 
 
@@ -269,6 +298,16 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
     '#attributes' => array('class' => 'brightcove-cck-browse-button', 'rel' => $element['#id'] . '-video-id-video-id'),
     '#value' => t('Browse'),
   );
+    $element['actions']['remove'] = array(
+      '#type' => 'brightcove_cck_browse_button',
+      '#id' => $element['#id'] . '-remove',
+      '#attributes' => array('class' => 'brightcove-cck-remove-button', 'rel' => $element['#id'] . '-video-id-video-id'),
+      '#value' => t('Remove'),
+    );
+  if (!isset($element['#default_value'][$field_key])) {
+    $element['actions']['remove']['#attributes']['disabled'] = 'disabled';
+  }
+
   // TODO: Button for upload, if upload is enabled and allowed.
 
   if (empty($element[$field_key]['#element_validate'])) {
@@ -310,12 +349,12 @@ function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
 function brightcove_cck_browser_value($element, $edit = FALSE) {
   $field_key  = $element['#columns'][0];
   $id = $element['#default_value'][$field_key];
-  if (!empty($id)) {
+  if ((int) $id > 1) {
     try {
       $bc = _brightcove_initialize();
       $video = $bc->find('find_video_by_id', $id);
     } catch (Exception $error) {
-      form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again later.'));
+      form_error($element, t('There was a problem accessing Brightcove. Please try again later.') . $id);
       watchdog('brightcove', 'Validating element with Brightcove failed.', array(), WATCHDOG_ERROR);
     }
     if ($video->id) {
@@ -336,7 +375,7 @@ function theme_brightcove_cck_browser($element) {
  * Implementation of hook_theme().
  */
 function brightcove_cck_theme() {
-  return array(
+  $theme = array(
       'brightcove_cck_browser' => array(
         'arguments' => array('element' => NULL),
         ),
@@ -357,16 +396,34 @@ function brightcove_cck_theme() {
         'arguments' => array('item' => NULL),
         'file' => 'theme.inc',
         ),
-      'brightcove_cck_attach_button' => array(
-        'arguments' => array('video_id' => NULL),
-        'file' => 'theme.inc',
-        ),
-
       );
+  if (module_exists('lightbox2')) {
+    $theme['brightcove_cck_formatter_lightbox2_player'] = array(
+      'arguments' => array('element' => NULL),
+      'function' => 'theme_brightcove_cck_lightbox2_player',
+      'file' => 'theme.inc',
+    );
+    if (module_exists('imagecache')) {
+      $presets = imagecache_presets();
+      foreach($presets as $preset_id => $preset) {
+        $theme['brightcove_cck_formatter_lightbox2_imagecache_' . $preset['presetname']] = array(
+          'arguments' => array('element'),
+          'function' => 'theme_brightcove_cck_lightbox2_imagecache',
+          'file' => 'brightcove_cck.formatters.inc',
+        );
+      }
+    }
+  }
+  dpm($theme);
+  return $theme;
 }
 
-
-function brightcove_browser_form(&$form_state, $item) {
+/**
+  * Browse form. Will return a form for one video item.
+  * 
+  * @see brightcove_cck_forms().
+  */
+function brightcove_cck_browser_form(&$form_state, $item) {
   $form['id'] = array(
       '#type' => 'value',
       '#value' => $item['video_id'],
@@ -388,19 +445,31 @@ function brightcove_browser_form(&$form_state, $item) {
       '#name' => 'submit-' . $item['video_id'],
       '#value' => t('Attach'),
       );
-  $form['#submit'] = array("brightcove_browser_form_submit");
+  $form['#submit'] = array("brightcove_cck_browser_form_submit");
   return $form;
 }
-function brightcove_browser_form_submit($form, &$form_state) {
+
+/**
+  * Submit callback for brightcove_cck_browser_form().
+  *
+  * Just take the value and pass it to modalframe.
+  */
+function brightcove_cck_browser_form_submit($form, &$form_state) {
+  // The value is "title [id:ID]" - recognised by validating element.
   $return['selected'] = $form_state['values']['title'] . ' [id:' . $form_state['values']['id'] . ']';
   modalframe_close_dialog($return);
 }
-
+/**
+  * Implementation of hook_forms().
+  *
+  * Needed to help Drupal determine which form to render - every video item in
+  * the browser is a separate form.
+  */
 function brightcove_cck_forms() {
   $args = func_get_args();
   $form_id = $args[0];
-  if (strpos($form_id, "brightcove_browser_form") === 0) {
-    $forms[$form_id] = array('callback' => 'brightcove_browser_form');
+  if (strpos($form_id, "brightcove_cck_browser_form") === 0) {
+    $forms[$form_id] = array('callback' => 'brightcove_cck_browser_form');
   }
   return $forms;
 }
