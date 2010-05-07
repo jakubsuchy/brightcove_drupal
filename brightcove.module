@@ -84,3 +84,29 @@ function brightcove_write_api_access() {
     return FALSE;
   }
 }
+
+/**
+  * Loads Brightcove video from BC Media API. Uses a 5 minutes cache to speed up lookups.
+  *
+  * @param $video_id
+  * Brightcove Studio video ID.
+  *
+  * @return $video
+  * Video object or FALSE if video not found.
+  */
+function brightcove_video_load($video_id) {
+  $cache = cache_get('bc:video:' . $video_id, 'cache');
+  if ($cache->data) {
+    return $cache->data;
+  } else {
+    $bc = _brightcove_initialize();
+    try {
+      $video = $bc->find('find_video_by_id', $video_id);
+    } catch (Exception $error) {
+      watchdog('brightcove', 'Loading Brightcove video failed.', array(), WATCHDOG_ERROR);
+      return FALSE;
+    }
+    cache_set('bc:video:' . $video_id, $video, 'cache', $_SERVER['REQUEST_TIME'] + 300);
+  }
+  return $video;
+}
