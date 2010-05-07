@@ -30,9 +30,10 @@ function brightcove_cck_menu() {
       'access arguments' => array('access content'), // TODO: Security - determine access.
       'type' => MENU_CALLBACK,
       );
-  $items['brightcove_cck/player/%node'] = array(
+  $items['brightcove_cck_player/%node/%/%'] = array(
       'title' => 'Brightcove Videos Window Player',
       'page callback' => 'brightcove_cck_player',
+      'page arguments' => array(1, 2, 3),
       'access arguments' => array('access content'), // TODO: Security - determine access.
       'type' => MENU_CALLBACK,
       );
@@ -40,8 +41,16 @@ function brightcove_cck_menu() {
   return $items;
 }
 
-function brightcove_cck_player($node) {
+function brightcove_cck_player($node, $field_name, $delta) {
+  if (node_access('view', $node) && content_access('view', $field_name)) {
 
+    $field = $node->{$field_name}[$delta]['video_id'];
+    $output = '<script src="http://admin.brightcove.com/js/BrightcoveExperiences.js" type="text/javascript"></script>';
+    $bc = _brightcove_initialize();
+    $output .= $bc->embed('video', variable_get('brightcove_player', ''), $field, array());
+
+    print $output;
+  }
 }
 
 /**
