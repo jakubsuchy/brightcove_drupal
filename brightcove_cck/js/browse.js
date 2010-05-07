@@ -22,7 +22,8 @@ Drupal.brightcove_cck.actions.remove = function() {
 
 Drupal.brightcove_cck.actions.browse = function() {
   var id = $(this).attr('rel');
-  Drupal.modalFrame.open({onSubmit: Drupal.brightcove_cck.submit(id), url: Drupal.settings.basePath + 'brightcove_cck/browse', width: 800, height: 600, autoFit: false});
+  var field_name = $('#' + id).attr('name');
+  Drupal.modalFrame.open({onSubmit: Drupal.brightcove_cck.submit(id), url: Drupal.settings.basePath + 'brightcove_cck/browse/' + Drupal.settings.brightcove_cck.node_type + '/' + Drupal.settings.brightcove_cck.field_name + '/' + Drupal.settings.brightcove_cck.nid, width: 800, height: 600, autoFit: false});
   return false;
 }
 
