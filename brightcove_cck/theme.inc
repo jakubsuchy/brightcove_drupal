@@ -67,6 +67,7 @@ function theme_brightcove_cck_browse_items($items) {
     $rowcount++;
     if ($rowcount == 4) {
       $activerow++;
+      $rowcount = 1;
     }
     $rows[$activerow][] = $themed;
   }
