@@ -8,7 +8,7 @@
  * Fields that want multiple value grouping options in addition to basic
  * field and formatter handling can extend this class.
  */
-class brightcove_cck_handler_field_video_multiple extends brightcove_cck_handler_field_video {
+class brightcove_cck_handler_field_video_tags_multiple extends brightcove_cck_handler_field_video_tags {
   var $defer_query;
 
   function init(&$view, $options) {
@@ -179,9 +179,11 @@ class brightcove_cck_handler_field_video_multiple extends brightcove_cck_handler
         $video = brightcove_video_load($item['video_id']);
         if (!empty($video)) {
           if (isset($video->{$this->bc_field})) {
-            $output = check_plain($video->{$this->bc_field});
+            $bc = _brightcove_initialize();
+            $tags = $bc->tags($video->{$this->bc_field});
+            $output = join($this->options['separator'] . ' ', array_map('check_plain', $tags));
+            $rendered[] = $this->render_link($output, (object) array('nid' => $item['_nid']));
           }
-          $rendered[] = $this->render_link($output, (object) array('nid' => $item['_nid']));
         }
       }
       if (count($rendered) > 1) {

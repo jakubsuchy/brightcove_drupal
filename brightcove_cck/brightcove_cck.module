@@ -143,20 +143,10 @@ function brightcove_cck_field_settings($op, $field) {
       return $columns;
 
     case 'views data':
-      $data = content_views_field_views_data($field);
-      $db_info = content_database_info($field);
-      $table_alias = content_views_tablename($field);
+      include_once(drupal_get_path('module', 'brightcove_cck') . '/views/brightcove_cck.views.inc');
 
-      $types = content_types();
+      $data = _brightcove_cck_views_data($field);
 
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['title'] = t('Video: name');
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['handler'] = 'brightcove_cck_handler_field_video_multiple';
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['additional fields'] = array($field['field_name'] . '_video_id' => $field['field_name'] . '_video_id');
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['real field'] = $field['field_name'] . '_video_id';
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['content_field_name'] = $field['field_name'];
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['title'] = t('Video: name');
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['title short'] = t('Video: name');
-      $data[$table_alias][$field['field_name'] .'_video_id_name']['field']['help'] = t('Video title - Appears in: @types', array('@types' => check_plain($types[$field['type_name']]['name'])));
       return $data;
   }
 }

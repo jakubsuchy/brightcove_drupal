@@ -15,7 +15,6 @@ function theme_brightcove_cck_lightbox2_player($element) {
     }
     $destination = 'brightcove_cck_player/' . $element['#node']->nid . '/' . $element['#field_name'] . '/' . $element['#item']['#delta'];
 
-
     $bc = _brightcove_initialize();
     // Ugly hack to support width and height of a video - get a BC player and check it's dimensions.
     $player = $bc->embed('video', variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);

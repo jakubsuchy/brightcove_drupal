@@ -10,7 +10,7 @@
  * but don't want the multiple value grouping options created by
  * content_handler_field_multiple.
  */
-class brightcove_cck_handler_field_video extends content_handler_field_multiple {
+class brightcove_cck_handler_field_video_tags extends content_handler_field_multiple {
   var $content_field;
 
   function construct() {
@@ -48,7 +48,7 @@ class brightcove_cck_handler_field_video extends content_handler_field_multiple 
 
     // Override views_handler_field_node's default label
     $options['label'] = '';
-    $options['format'] = 'default';
+    $options['separator'] = ',';
   }
 
   /**
@@ -70,6 +70,14 @@ class brightcove_cck_handler_field_video extends content_handler_field_multiple 
       '#default_value' => isset($this->options['label']) ? $this->options['label'] : '', 
       '#description' => t('The label for this field that will be displayed to end users if the style requires it.'),
     );
+    $time = time();
+
+    $form['separator'] = array(
+        '#type' => 'textfield',
+        '#description' => t('Lists tags separated by a character (or a string) specified here.'),
+        '#title' => t('Tag separator'),
+        '#default_value' => isset($this->options['separator']) ? $this->options['separator'] : 'small',
+        );
   }
 
   function label() {
@@ -86,10 +94,12 @@ class brightcove_cck_handler_field_video extends content_handler_field_multiple 
     $video = brightcove_video_load($value);
     if (!empty($video)) {
       if (isset($video->{$this->bc_field})) {
-        return check_plain($video->{$this->bc_field});
+        $bc = _brightcove_initialize();
+        $tags = $bc->tags($video->{$this->bc_field});
+        return join($this->options['separator'] . ' ', array_map('check_plain', $tags));
       }
     }
-    return '';
+    return theme('views_nodate');
   }
 
 }

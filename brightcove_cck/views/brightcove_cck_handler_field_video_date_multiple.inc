@@ -8,7 +8,7 @@
  * Fields that want multiple value grouping options in addition to basic
  * field and formatter handling can extend this class.
  */
-class brightcove_cck_handler_field_video_multiple extends brightcove_cck_handler_field_video {
+class brightcove_cck_handler_field_video_date_multiple extends brightcove_cck_handler_field_video_date {
   var $defer_query;
 
   function init(&$view, $options) {
@@ -179,9 +179,25 @@ class brightcove_cck_handler_field_video_multiple extends brightcove_cck_handler
         $video = brightcove_video_load($item['video_id']);
         if (!empty($video)) {
           if (isset($video->{$this->bc_field})) {
-            $output = check_plain($video->{$this->bc_field});
+            $value = floor($video->{$this->bc_field} / 1000);
+            $time_diff = $_SERVER['REQUEST_TIME'] - $value; // will be positive for a datetime in the past (ago), and negative for a datetime in the future (hence)
+            switch ($format) {
+              case 'raw time ago':
+                $output = format_interval($time_diff, is_numeric($custom_format) ? $custom_format : 2);
+              case 'time ago':
+                $output = t('%time ago', array('%time' => format_interval($time_diff, is_numeric($custom_format) ? $custom_format : 2)));
+              case 'raw time span':
+                $output = ($time_diff < 0 ? '-' : '') . format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2);
+              case 'time span':
+                $output = t(($time_diff < 0 ? '%time hence' : '%time ago'), array('%time' => format_interval(abs($time_diff), is_numeric($custom_format) ? $custom_format : 2)));
+              case 'custom':
+                $output = format_date($value, $format, $custom_format);
+              default:
+                $output = format_date($value, $format);
+
+            }
+            $rendered[] = $this->render_link($output, (object) array('nid' => $item['_nid']));
           }
-          $rendered[] = $this->render_link($output, (object) array('nid' => $item['_nid']));
         }
       }
       if (count($rendered) > 1) {
