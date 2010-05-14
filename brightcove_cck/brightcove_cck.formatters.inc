@@ -1,17 +1,32 @@
 <?php
 
+
+function theme_brightcove_cck_lightbox2_imagecache($element) {
+  $preset = str_replace('lightbox2_imagecache_', '', $element['#formatter']);
+  if (isset($element['#item']['video_id'])) {  
+
+    $video = brightcove_video_load($element['#item']['video_id']);
+  dpm($video);
+    if (!empty($video->thumbnailURL)) {
+      $image = theme('imagecache', $preset, brightcove_remote_image($video->thumbnailURL));
+      return theme('brightcove_cck_formatter_lightbox2_player', $element, $image);
+    }
+  }
+}
 /**
   * Theme callback for Default thumbnail -> Lightbox2 player formatter.
   */
-function theme_brightcove_cck_lightbox2_player($element) {
+function theme_brightcove_cck_lightbox2_player($element, $image = NULL) {
   if (isset($element['#item']['video_id'])) {
 
     $video = brightcove_video_load($element['#item']['video_id']);
 
-    if (!empty($video->thumbnailURL)) {
-      $image = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
-    } else {
-      $image = t('Play video');
+    if (!$image) {
+      if (!empty($video->thumbnailURL)) {
+        $image = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
+      } else {
+        $image = t('Play video');
+      }
     }
     $destination = 'brightcove_cck_player/' . $element['#node']->nid . '/' . $element['#field_name'] . '/' . $element['#item']['#delta'];
 

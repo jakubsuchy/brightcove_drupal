@@ -244,7 +244,7 @@ function brightcove_cck_field_formatter_info() {
     if (module_exists('imagecache')) {
       $presets = imagecache_presets();
       foreach($presets as $preset_id => $preset) {
-        $formatters['brightcove_cck_lightbox2_imagecache_' . $preset['presetname']] = array(
+        $formatters['lightbox2_imagecache_' . $preset['presetname']] = array(
             'label' => t('Imagecache @preset -> Lightbox2', array('@preset' => $preset['presetname'])),
             'field types' => array('brightcove_video'),
             'multiple values' => CONTENT_HANDLE_CORE,
@@ -425,7 +425,7 @@ function brightcove_cck_theme() {
       );
   if (module_exists('lightbox2')) {
     $theme['brightcove_cck_formatter_lightbox2_player'] = array(
-      'arguments' => array('element' => NULL),
+      'arguments' => array('element' => NULL, 'image' => NULL),
       'function' => 'theme_brightcove_cck_lightbox2_player',
       'file' => 'brightcove_cck.formatters.inc',
     );
@@ -464,7 +464,7 @@ function brightcove_cck_browser_form(&$form_state, $item) {
       );
   $form['text_image'] = array(
       '#type' => 'item',
-      '#value' => theme('image', $item['thumbnail'], '', '', NULL, FALSE),
+      '#value' => $item['thumbnail'],
       );
   $form['submit'] = array(
       '#type' => 'submit',

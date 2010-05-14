@@ -3,6 +3,7 @@
    http://docs.brightcove.com/en/media/
    http://support.brightcove.com/en/docs/category/players
    http://support.brightcove.com/en/docs/media-api-error-message-reference
+   http://support.brightcove.com/en/docs/media-api-objects-reference
    */
 
 /**
@@ -109,4 +110,48 @@ function brightcove_video_load($video_id) {
     cache_set('bc:video:' . $video_id, $video, 'cache', $_SERVER['REQUEST_TIME'] + 300);
   }
   return $video;
+}
+/**
+  * Function that saves a remote image as a local file.
+  *
+  * @param $url
+  * Remote image URL.
+  *
+  * @return
+  * Returns FALSE if image doesn't exist, cannot be saved or is not image (based on extension).
+  * Returns local file path if image already exists or was saved correctly.
+  */
+function brightcove_remote_image($url) {
+  $parse = parse_url($url);
+  $path = pathinfo($parse['path']);
+
+  $fullpath = file_directory_path() . '/brightcove_thumbnail';
+
+  $final_file = $fullpath . '/' . $path['basename'];
+
+  if (file_exists($final_file)) {
+    return $final_file;
+  }
+
+  // Perform basic extension check.
+  if (!in_array(strtolower($path['extension']), array('jpg', 'jpeg', 'png', 'gif'))) {
+    return FALSE;
+  }
+
+  if (!file_check_directory($fullpath, FILE_CREATE_DIRECTORY)) {
+    return FALSE;
+  }
+
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_HEADER, FALSE);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+  // Causes a warning if PHP safe mode is on.
+  @curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+  $rawdata = curl_exec($ch);
+  if (($fp = @fopen($final_file, 'x'))) {
+    fwrite($fp, $rawdata);
+    fclose($fp);
+  }
+  return $final_file;
 }

@@ -39,9 +39,14 @@ function brightcove_cck_browse() {
     $item['title'] = check_plain($video->name);
     $item['video_id'] = $video->id;
     if (!empty($video->thumbnailURL)) {
-      $item['thumbnail'] = $video->thumbnailURL;
+      if (module_exists('imagecache')) {
+        dpm($video);
+        $item['thumbnail'] = theme('imagecache', 'brightcove_browser', brightcove_remote_image($video->thumbnailURL));
+      } else {
+        $item['thumbnail'] = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
+      }
     } else {
-      $item['thumbnail'] = drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg';
+      $item['thumbnail'] = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE);
     }
     $items[] = $item;
   }
