@@ -40,7 +40,6 @@ function brightcove_cck_browse() {
     $item['video_id'] = $video->id;
     if (!empty($video->thumbnailURL)) {
       if (module_exists('imagecache')) {
-        dpm($video);
         $item['thumbnail'] = theme('imagecache', 'brightcove_browser', brightcove_remote_image($video->thumbnailURL));
       } else {
         $item['thumbnail'] = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
@@ -79,4 +78,14 @@ function brightcove_cck_autocomplete($field_name, $string = '') {
   return drupal_json($matches);
 }
 
+
+
+
+function brightcove_cck_upload() {
+  modalframe_child_js(); //dialog internal area
+  drupal_add_css(drupal_get_path('module', 'brightcove_cck') . '/brightcove_cck.upload.css');
+//  drupal_add_js(drupal_get_path('module', 'brightcove_cck') . '/js/attach.js');
+
+  return drupal_get_form('brightcove_cck_upload_form');
+}
 

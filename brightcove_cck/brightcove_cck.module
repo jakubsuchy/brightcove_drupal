@@ -22,7 +22,7 @@ function brightcove_cck_menu() {
       'page callback' => 'brightcove_cck_autocomplete',
       'page arguments' => array(2, 5),
       'access callback' => 'brightcove_cck_browse_access',
-      'access arguments' => array(3, 2), // TODO: Security - determine access.
+      'access arguments' => array(3, 2),
       'file' => 'brightcove_cck.browse.inc',
       'type' => MENU_CALLBACK,
       );
@@ -31,10 +31,20 @@ function brightcove_cck_menu() {
       'page arguments' => array(2, 3),
       'page callback' => 'brightcove_cck_browse',
       'access callback' => 'brightcove_cck_browse_access',
-      'access arguments' => array(2, 3), // TODO: Security - determine access.
+      'access arguments' => array(2, 3),
       'file' => 'brightcove_cck.browse.inc',
       'type' => MENU_CALLBACK,
       );
+  $items['brightcove_cck/upload/%/%'] = array(
+      'title' => 'Upload video to Brightcove',
+      'page arguments' => array(2, 3),
+      'page callback' => 'brightcove_cck_upload',
+      'access callback' => 'brightcove_cck_browse_access',
+      'access arguments' => array(2, 3),
+      'file' => 'brightcove_cck.browse.inc',
+      'type' => MENU_CALLBACK,
+      );
+
   $items['brightcove_cck_player/%node/%/%'] = array(
       'title' => 'Brightcove Videos Window Player',
       'page callback' => 'brightcove_cck_player',
@@ -295,10 +305,11 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
   $field_key  = $element['#columns'][0];
 
 
+  $field_info = content_fields($element['#field_name'], $element['#type_name']);
   modalframe_parent_js(); //dialog internal area
   $element[$field_key] = array(
-      '#type' => 'text_textfield',
-      '#default_value' => isset($element['#value']) ? $element['#value'] : '',
+      '#type' => 'textfield',
+      '#default_value' => isset($element['#value'][$field_key]) ? $element['#value'][$field_key] : '',
       '#autocomplete_path' => 'brightcove_cck/autocomplete/'. $element['#field_name'] . '/' . $element['#type_name'] . '/' . $form['nid']['#value'],
       // The following values were set by the content module and need
       // to be passed down to the nested element.
@@ -309,34 +320,44 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
       '#type_name' => $element['#type_name'],
       '#delta' => $element['#delta'],
       '#columns' => $element['#columns'],
+      '#attributes' => array('rel' => $element['#field_name']),
       );
   // Button to browse videos.
   $element['actions']['browse'] = array(
       '#type' => 'brightcove_cck_browse_button',
       '#id' => $element['#id'] . '-browse',
-      '#attributes' => array('class' => 'brightcove-cck-browse-button', 'rel' => $element['#id'] . '-video-id-video-id'),
+      '#attributes' => array('class' => 'brightcove-cck-browse-button', 'rel' => $element['#id'] . '-video-id'),
       '#value' => t('Browse'),
       );
+  if ($field_info['allow_upload']) {
+    $element['actions']['upload'] = array(
+        '#type' => 'brightcove_cck_browse_button',
+        '#id' => $element['#id'] . '-upload',
+        '#attributes' => array('class' => 'brightcove-cck-upload-button', 'rel' => $element['#id'] . '-video-id'),
+        '#value' => t('Upload'),
+        );
+  }
+
   $element['actions']['remove'] = array(
       '#type' => 'brightcove_cck_browse_button',
       '#id' => $element['#id'] . '-remove',
-      '#attributes' => array('class' => 'brightcove-cck-remove-button', 'rel' => $element['#id'] . '-video-id-video-id'),
-      '#value' => t('Remove'),
+      '#attributes' => array('class' => 'brightcove-cck-remove-button', 'rel' => $element['#id'] . '-video-id'),
+      '#value' => t('Detach'),
       );
   if (!isset($element['#default_value'][$field_key])) {
     $element['actions']['remove']['#attributes']['disabled'] = 'disabled';
   }
 
 
-  if (empty($brightcove_cck_settings)) {
-    $brightcove_cck_settings = array(
-        'brightcove_cck' => array(
+  if (empty($brightcove_cck_settings[$element['#field_name']])) {
+    $brightcove_cck_settings[$element['#field_name']] = array(
+        'brightcove_cck' => array($element['#field_name'] => array(
           'node_type' => $element['#type_name'],
           'field_name' => $element['#field_name'],
           'nid' => $nid = $form['nid']['#value'],
-          ),
+          )),
         );
-    drupal_add_js($brightcove_cck_settings, 'setting');
+    drupal_add_js($brightcove_cck_settings[$element['#field_name']], 'setting');
   }
 
 
@@ -510,5 +531,82 @@ function brightcove_cck_views_api() {
       'api' => 2,
       'path' => drupal_get_path('module', 'brightcove_cck') .'/views',
       );
+}
+
+/**
+  * Browse form. Will return a form for one video item.
+  */
+function brightcove_cck_upload_form(&$form_state) {
+  $form['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title'),
+      '#description' => t('Video name or title.'),
+      '#required' => TRUE,
+      '#default_value' => $form_state['values']['title'],
+      );
+  $form['upload'] = array(
+      '#type' => 'file',
+      '#title' => t('Attach new file'),
+      '#required' => TRUE,
+      '#size' => 40,
+      '#description' => ($limits['resolution'] ? t('Images are larger than %resolution will be resized. ', array('%resolution' => $limits['resolution'])) : '') . t('The maximum upload size is %filesize. Only files with the following extensions may be uploaded: %extensions. ', array('%extensions' => $limits['extensions'], '%filesize' => format_size($limits['file_size']))),
+      );
+
+  $form['short'] = array(
+      '#type' => 'textarea',
+      '#rows' => 3,
+      '#required' => TRUE,
+      '#title' => t('Short description'),
+      '#description' => t('Video short description.'),
+      '#default_value' => $form_state['values']['short'],
+      );
+  $form['tags'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Tags'),
+      '#description' => t('Associated tags, separated by comma.'),
+      '#default_value' => $form_state['values']['tags'],
+      );
+  $form['advanced'] = array(
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#title' => t('Advanced attributes'),
+      );
+  $form['advanced']['long'] = array(
+      '#type' => 'textarea',
+      '#rows' => 4,
+      '#title' => t('Long description'),
+      '#description' => t('Video long description.'),
+      '#default_value' => $form_state['values']['long'],
+      );
+  $form['advanced']['linktext'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Related link text'),
+      '#description' => t('Related link description or text.'),
+      '#default_value' => $form_state['values']['linktext'],
+      );
+  $form['advanced']['linkurl'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Related link url'),
+      '#description' => t('Related link URL.'),
+      '#default_value' => $form_state['values']['linkurl'],
+      );
+  /*  $form['attach'] = array(
+      '#type' => 'submit',
+      '#value' => t('Upload'),
+      '#name' => 'upload',
+      '#ahah' => array(
+      'path' => 'upload/js',
+      'wrapper' => 'attach-wrapper',
+      'progress' => array('type' => 'bar', 'message' => t('Please wait...')),
+      ),*/
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#name' => 'submit-' . $item['video_id'],
+      '#value' => t('Attach'),
+      );
+
+  $form['#submit'] = array("brightcove_cck_upload_form_submit");
+  return $form;
 }
 
