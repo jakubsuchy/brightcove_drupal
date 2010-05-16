@@ -1,6 +1,17 @@
 <?php
 
+/**
+  * @file
+  * Formatters for video CCK field.
+  */
 
+/**
+  * Theme callback for Lightbox2 with imagecache player.
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Player HTML code.
+  */
 function theme_brightcove_cck_lightbox2_imagecache($element) {
   $preset = str_replace('lightbox2_imagecache_', '', $element['#formatter']);
   if (isset($element['#item']['video_id'])) {  
@@ -17,8 +28,14 @@ function theme_brightcove_cck_lightbox2_imagecache($element) {
     }
   }
 }
+
 /**
   * Theme callback for Default thumbnail -> Lightbox2 player formatter.
+  *
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Player HTML code.
   */
 function theme_brightcove_cck_lightbox2_player($element, $image = NULL) {
   if (!empty($element['#item']['video_id'])) {

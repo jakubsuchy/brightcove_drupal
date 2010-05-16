@@ -49,11 +49,56 @@ function brightcove_perm() {
   return array('administer brightcove settings');
 }
 
+function brightcove_init() {
+  // Autoload the Echove class when needed.
+  spl_autoload_register('brightcove_autoload');
+} 
+
+/**
+ * Autoload the Echove class when needed.
+ */ 
+function brightcove_autoload($class_name) {
+  if (in_array($class_name, array('Echove', 'EchoveException'))) {
+    include_once(brightcove_echove_path() . '/echove.php');
+  }
+}
+
+/**
+ * Return the path to the Echove library.
+ *
+ * If brightcove_variable_get('echove_path') has not yet been set, then
+ * this will attempt to autodiscover the path if the echove.php file exists
+ * within sites/all/libraries/* or sites/example.com/libraries/*. It will also
+ * set the path to media_brightcove_variable_get('echove_path').
+ *
+ * The library is available from http://echove.net/.
+ *
+ * @param boolean $reset
+ *  (Optional) If TRUE, then reset the variable and attempt a new autodiscovery.
+ * @return string
+ *  The path to the echove.php file.
+ */
+function brightcove_echove_path($reset = FALSE) {
+  static $path;
+
+  if (!isset($path) || $reset) {
+    if (!($path = variable_get('brightcove_echove_path', FALSe)) || $reset) {
+      $files = drupal_system_listing('^echove\.php$', 'libraries', 'basename', 0);
+      if (isset($files['echove.php'])) {
+        $path = dirname($files['echove.php']->filename);
+        variable_set('brightcove_echove_path', $path);
+      }
+    }
+  }
+
+  return $path;
+}
+
+
 /**
   * Include all Echove SDK files.
   */
 function _brightcove_initialize() {
-  include_once libraries_get_path('echove') . '/echove.php';
 
   $read_token = variable_get('brightcove_read_api_key', '');
   $write_token = variable_get('brightcove_write_api_key', '');
