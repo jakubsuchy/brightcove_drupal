@@ -14,7 +14,16 @@ function brightcove_requirements($phase) {
   $requirements = array();
   $t = get_t();
 
-  if (!file_exists(realpath('.') . '/sites/all/libraries/echove/echove.php')) {
+  if (!($path = variable_get('brightcove_echove_path', FALSe)) || $reset) {
+    $files = drupal_system_listing('^echove\.php$', 'libraries', 'basename', 0);
+    if (isset($files['echove.php'])) {
+      $path = dirname($files['echove.php']->filename);
+      variable_set('brightcove_echove_path', $path);
+    }
+  }
+
+
+  if (!$path) {
     $requirements['echove']['title'] = $t('Echove SDK');
     $requirements['echove']['description'] = $t('Echove SDK is missing. Please install it from !url.', array('!url' => l('Echove.net', 'http://www.echove.net')));
     $requirements['echove']['severity'] = REQUIREMENT_ERROR;

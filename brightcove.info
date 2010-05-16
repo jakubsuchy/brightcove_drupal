@@ -3,4 +3,3 @@ name = Brightcove
 description = Brightcove integration module - basic API
 core = 6.x
 
-dependencies[] = libraries 
