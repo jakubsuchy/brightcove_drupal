@@ -16,28 +16,6 @@ function theme_brightcove_cck_browse_button($element) {
 }
 
 /**
-  * Theme callback for Brightcove CCK formatter.
-  * Returns an embedded player with default site player.
-  *
-  * @param $element
-  *  Element with the Video ID.
-  * @return
-  *  Player HTML code.
-  */
-function theme_brightcove_cck_formatter_default($element) {
-  if (isset($element['#item']['video_id'])) {
-    $bc = _brightcove_initialize();
-    // We need to write a BC JavaScript to the page, which is not possible
-    // with a simple drupal_add_js(), inline is needed.
-    $script = 'document.write(unescape("%3Cscript src=\'http://admin.brightcove.com/js/BrightcoveExperiences.js\' type=\'text/javascript\'%3E%3C/script%3E"));';
-    drupal_add_js($script, 'inline', 'header');
-    $player = $bc->embed('video', variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);
-    return $player;
-  } else {
-    return FALSE;
-  }
-}
-/**
   * Theme callback for Brightcove browse table item.
   *
   * @param item

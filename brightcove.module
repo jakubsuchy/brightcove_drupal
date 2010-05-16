@@ -91,14 +91,17 @@ function brightcove_write_api_access() {
   *
   * @param $video_id
   * Brightcove Studio video ID.
+  * @param $cache
+  * TRUE or FALSE. Whether to return a video from cache, if present.
   *
   * @return $video
   * Video object or FALSE if video not found.
   */
-function brightcove_video_load($video_id) {
+function brightcove_video_load($video_id, $cache = TRUE) {
   $cache = cache_get('bc:video:' . $video_id, 'cache');
-  if ($cache->data) {
-    return $cache->data;
+  $video = $cache->data;
+  if (!empty($video->id)) {
+    return $video;
   } else {
     $bc = _brightcove_initialize();
     try {
@@ -107,10 +110,14 @@ function brightcove_video_load($video_id) {
       watchdog('brightcove', 'Loading Brightcove video failed.', array(), WATCHDOG_ERROR);
       return FALSE;
     }
-    cache_set('bc:video:' . $video_id, $video, 'cache', $_SERVER['REQUEST_TIME'] + 300);
+    if (!empty($video->id)) {
+      cache_set('bc:video:' . $video_id, $video, 'cache', $_SERVER['REQUEST_TIME'] + 300);
+      return $video;
+    }
   }
-  return $video;
+  return FALSE;
 }
+
 /**
   * Function that saves a remote image as a local file.
   *
@@ -154,4 +161,19 @@ function brightcove_remote_image($url) {
     fclose($fp);
   }
   return $final_file;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function brightcove_theme($existing, $type, $theme, $path) {
+  return array(
+    'brightcove_unavailable_message' => array(
+      'arguments' => array('message' => NULL),
+      ),
+    );
+} 
+
+function theme_brightcove_unavailable_message($message) {
+  return '<div class="video-unavailable">' . $message . '</div>';
 }

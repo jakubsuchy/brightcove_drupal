@@ -174,7 +174,10 @@ function brightcove_cck_field($op, &$node, $field, &$items, $teaser, $page) {
           if (!empty($item['video_id'])) {
             $video = brightcove_video_load($item['video_id']);
             if (empty($video->id)) {
-              form_set_error($error_element, t('%name: invalid video.', array('%name' => t($field['widget']['label']))));
+              // Check for video in session - uploaded file.
+              if (!$_SESSION['video_' . $item['video_id']]) {
+                form_set_error($error_element, t('%name: invalid video.', array('%name' => t($field['widget']['label']))));
+              }
             }
           }
         }
@@ -187,7 +190,10 @@ function brightcove_cck_field($op, &$node, $field, &$items, $teaser, $page) {
  * Implementation fo hook_content_is_empty().
  */
 function brightcove_cck_content_is_empty($item, $field) {
-  return FALSE;
+  if (!empty($item['video_id'])) {
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /**
@@ -198,7 +204,7 @@ function brightcove_cck_browser_validate($element, &$form_state) {
   $type_name = $element['#type_name'];
   $field = content_fields($field_name, $type_name);
   $field_key = $element['#columns'][0];
-  $value = $element['#value'][$field_key];
+  $value = $element['#value'];
   if (!empty($value)) {
     // Assign ID to the value.
     // 231289 [id:72431493001]
@@ -208,8 +214,8 @@ function brightcove_cck_browser_validate($element, &$form_state) {
     if (is_numeric($id)) {
       // Matched ID, check if the video exists.
       $video = brightcove_video_load($id);
-      if ($video->id != $id) {
-        form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
+      if ($video->id != $id && !$_SESSION['video_' . $item['video_id']]) {
+        form_error($element, t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
       }
     } else {
       // Didn't match ID, try looking up the video text at BC.
@@ -217,15 +223,15 @@ function brightcove_cck_browser_validate($element, &$form_state) {
       try {
         $result = $bc->find('find_videos_by_text', array('text' => $value));
       } catch (Exception $error) {
-        form_error($element[$field_key], t('There was a problem accessing Brightcove. Please try again'));
+        form_error($element, t('There was a problem accessing Brightcove. Please try again'));
         watchdog('brightcove', 'Validating element with Brightcove failed', array(), WATCHDOG_ERROR);
       }
       if (count($result) > 1) {
         // This title is ambiguous.
-        form_error($element[$field_key], t('%name: Video title %title matched more than one video. In case of doubt, use text "title [id:ID_OF_THE_VIDEO]"', array('%title', $value, '%name' => t($field['widget']['label']))));
+        form_error($element, t('%name: Video title %title matched more than one video. In case of doubt, use text "title [id:ID_OF_THE_VIDEO]"', array('%title', $value, '%name' => t($field['widget']['label']))));
       } else if (count($result) == 0) {
         // No video found.
-        form_error($element[$field_key], t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
+        form_error($element, t('%name: Found no valid video with that name. Please note that it might take several minutes after the video has been uploaded in Brightcove Studio to appear in the API.', array('%name' => t($field['widget']['label']))));
       } else {
         $id = $result[0]->id;
       }
@@ -303,7 +309,6 @@ function brightcove_cck_elements() {
 function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
   global $brightcove_cck_settings;
   $field_key  = $element['#columns'][0];
-
 
   $field_info = content_fields($element['#field_name'], $element['#type_name']);
   modalframe_parent_js(); //dialog internal area
@@ -428,7 +433,7 @@ function brightcove_cck_theme() {
         ),
       'brightcove_cck_formatter_default' => array(
         'arguments' => array('element'),
-        'file' => 'theme.inc',
+        'file' => 'brightcove_cck.formatters.inc',
         ),
       'brightcove_cck_browse_button' => array(
         'arguments' => array('element' => NULL),
@@ -546,10 +551,8 @@ function brightcove_cck_upload_form(&$form_state) {
       );
   $form['upload'] = array(
       '#type' => 'file',
-      '#title' => t('Attach new file'),
-      '#required' => TRUE,
+      '#title' => t('Video file'),
       '#size' => 40,
-      '#description' => ($limits['resolution'] ? t('Images are larger than %resolution will be resized. ', array('%resolution' => $limits['resolution'])) : '') . t('The maximum upload size is %filesize. Only files with the following extensions may be uploaded: %extensions. ', array('%extensions' => $limits['extensions'], '%filesize' => format_size($limits['file_size']))),
       );
 
   $form['short'] = array(
@@ -560,17 +563,17 @@ function brightcove_cck_upload_form(&$form_state) {
       '#description' => t('Video short description.'),
       '#default_value' => $form_state['values']['short'],
       );
-  $form['tags'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Tags'),
-      '#description' => t('Associated tags, separated by comma.'),
-      '#default_value' => $form_state['values']['tags'],
-      );
   $form['advanced'] = array(
       '#type' => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
       '#title' => t('Advanced attributes'),
+      );
+  $form['advanced']['tags'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Tags'),
+      '#description' => t('Associated tags, separated by comma.'),
+      '#default_value' => $form_state['values']['tags'],
       );
   $form['advanced']['long'] = array(
       '#type' => 'textarea',
@@ -606,7 +609,52 @@ function brightcove_cck_upload_form(&$form_state) {
       '#value' => t('Attach'),
       );
 
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
   $form['#submit'] = array("brightcove_cck_upload_form_submit");
   return $form;
 }
 
+function brightcove_cck_upload_form_submit($form, &$form_state) {
+
+  $limits['extensions'] = array('3g2', '3gp', 'asf', 'avi', 'dv', 'flv', 'f4v', 'm4v', 'mov', 'mp4', 'mpeg', 'mpg', 'mts', 'm2ts', 'qt', 'wmv');
+  $validators = array(
+    'file_validate_extensions' => array($limits['extensions']),
+  );
+
+  // Save new file uploads.
+  if ($file = file_save_upload('upload', $validators, file_directory_path())) {
+    // Do something with $file here.
+
+    $tags = split(',', $form_state['values']['tags']);
+
+    $meta = array(
+        'name' => $form_state['values']['title'],
+        'shortDescription' => $form_state['values']['short'],
+        'longDescription' => $form_state['values']['long'],
+        'linkText' => $form_state['values']['linktext'],
+        'linkURL' => $form_state['values']['linkurl'],
+#        'tags' => $tags,
+        );
+    $bc = _brightcove_initialize();
+    try {
+      $id = $bc->createMedia('video', $file->filepath, $meta);
+    } catch (Exception $error) {
+      drupal_set_message(t('Video upload to Brightcove failed. Error: @error', array('@error' => $error)), 'error');
+      return;
+    }
+
+    // Construct Video object with ID - we need to cache it and save to session.
+    // Brightcove Media API doesn't clear it's cache when a new video is
+    // uploaded, therefore the node save would fail.
+    $video = new StdClass;
+    $video->id = $id;
+    $video->name = $form_state['values']['title'];
+    $_SESSION['video_' . $id] = $video;
+
+    $return['selected'] = $form_state['values']['title'] . ' [id:' . $id . ']';
+    modalframe_close_dialog($return);
+
+  } else {
+    drupal_set_message(t('Only Video files are allowed here.'), 'error');
+  }
+}
