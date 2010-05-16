@@ -1,0 +1,6 @@
+.brightcove-browse-table tr td { width: 130px; text-align: center; vertical-align: top; }
+.brightcove-browse-table .form-item img { max-width: 120px; max-height: 120px; border: 1px solid #dddddd; overflow: none; vertical-align: center; }
+.brightcove-browse-table .video-title { font-weight: bold; }
+.brightcove-browse-table table { width: 390px; margin: 0; }
+.brightcove-browse-table tbody { border: 0; }
+.brightcove-browse-table tr.odd, .brightcove-browse-table tr.even { background: none; border: none; }

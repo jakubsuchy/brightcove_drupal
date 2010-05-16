@@ -21,7 +21,7 @@
   */
 function brightcove_cck_browse() {
   modalframe_child_js(); //dialog internal area
-  drupal_add_css(drupal_get_path('module', 'brightcove_cck') . '/brightcove_cck.browse.css');
+  drupal_add_css(drupal_get_path('module', 'brightcove_cck') . '/styles/browse.css');
   drupal_add_js(drupal_get_path('module', 'brightcove_cck') . '/js/attach.js');
   // Issue a BC request to list videos
   // For all videos, get a thumbnail URL
