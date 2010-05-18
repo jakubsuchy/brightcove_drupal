@@ -27,7 +27,6 @@ function brightcove_cck_views_handlers() {
         'brightcove_cck_handler_field_video_tags' => array(
           'parent' => 'content_handler_field_multiple',
           ),
-
         ),
       );
 }
