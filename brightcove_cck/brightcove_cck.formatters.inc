@@ -13,7 +13,9 @@
   *  Player HTML code.
   */
 function theme_brightcove_cck_lightbox2_imagecache($element) {
-  $preset = str_replace('lightbox2_imagecache_', '', $element['#formatter']);
+  $preset_data = str_replace('lightbox2_imagecache_', '', $element['#formatter']);
+  list($preset, $field) = split('__', $preset_data);
+
   if (isset($element['#item']['video_id'])) {  
 
     $video = brightcove_video_load($element['#item']['video_id']);
@@ -23,8 +25,8 @@ function theme_brightcove_cck_lightbox2_imagecache($element) {
       return FALSE;
     }
     if (!empty($video->thumbnailURL)) {
-      $image = theme('imagecache', $preset, brightcove_remote_image($video->thumbnailURL));
-      return theme('brightcove_cck_formatter_lightbox2_player', $element, $image);
+      $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
+      return theme('brightcove_cck_formatter_lightbox2_player_' . $field, $element, $image, $preset);
     }
   }
 }
@@ -37,8 +39,12 @@ function theme_brightcove_cck_lightbox2_imagecache($element) {
   * @return
   *  Player HTML code.
   */
-function theme_brightcove_cck_lightbox2_player($element, $image = NULL) {
+function theme_brightcove_cck_lightbox2_player($element, $image = NULL, $preset = NULL) {
   if (!empty($element['#item']['video_id'])) {
+
+
+    $field = str_replace('lightbox2_player_', '', $element['#formatter']);
+
     $video = brightcove_video_load($element['#item']['video_id']);
     if (!isset($video->id)) {
       if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
@@ -49,8 +55,8 @@ function theme_brightcove_cck_lightbox2_player($element, $image = NULL) {
     }
 
     if (!$image) {
-      if (!empty($video->thumbnailURL)) {
-        $image = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
+      if (!empty($video->{$field})) {
+        $image = theme('image', $video->{$field}, '', '', NULL, FALSE);
       } else {
         $image = t('Play video');
       }
@@ -70,11 +76,30 @@ function theme_brightcove_cck_lightbox2_player($element, $image = NULL) {
 
     $output = l($image, $destination, array('attributes' => array('rel' => $rel_full, 'class' => $element['#field_name'], 'title' => check_plain($video->name)), 'html' => TRUE));
 
-    return $output;
-  } else {
-    return FALSE;
+    $video_width = $width - 30;
+    $video_height = $height - 30;
+    $lightbox2_width = $width;
+    $lightbox2_height = $height;
+    $video_id = $element['#item']['video_id'];
+
+  }
+  if ($output) {
+    return theme('brightcove_cck_lightbox2', $output, $video_id, $video_width, $video_height, $lightbox2_width, $lightbox2_height, $destination, $field, $element['#field_name'], $element['#type_name'], $preset);
   }
 
+}
+
+/**
+  * Template preprocess for brightcove_cck_lightbox2 theme file.
+  * Suggest templates based on a field and type name.
+  */
+function template_preprocess_brightcove_cck_lightbox2(&$vars) {
+  $vars['template_files'] = array(
+      'brightcove-cck-lightbox2--' . $vars['image_field'],
+      'brightcove-cck-lightbox2--' . $vars['field_name'] . '--' . $vars['image_field'],
+      'brightcove-cck-lightbox2--' . $vars['type_name'] . '--' . $vars['field_name'] . '--' . $vars['image_field'],
+      );
+  dpm($vars);
 }
 
 /**
@@ -94,10 +119,9 @@ function theme_brightcove_cck_formatter_default($element) {
     $script = 'document.write(unescape("%3Cscript src=\'http://admin.brightcove.com/js/BrightcoveExperiences.js\' type=\'text/javascript\'%3E%3C/script%3E"));';
     drupal_add_js($script, 'inline', 'header');
     $player = $bc->embed('video', variable_get('brightcove_player', ''),  $element['#item']['video_id'], $params);
-    dpm($player);
-    return $player;
-  } else {
-    return FALSE;
+  }
+  if ($player) {
+    return theme('brightcove_cck_player', $player, $element['#item']['video_id']);
   }
 }
 

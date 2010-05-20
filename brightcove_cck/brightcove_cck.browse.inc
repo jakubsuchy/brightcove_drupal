@@ -20,6 +20,7 @@
   *       parent field and allow attaching all videos at once.
   */
 function brightcove_cck_browse() {
+  global $pager_from_array, $pager_total, $pager_page_array;
   modalframe_child_js(); //dialog internal area
   drupal_add_css(drupal_get_path('module', 'brightcove_cck') . '/styles/browse.css');
   drupal_add_js(drupal_get_path('module', 'brightcove_cck') . '/js/attach.js');
@@ -29,11 +30,23 @@ function brightcove_cck_browse() {
   $bc = _brightcove_initialize();
   $matches = array();
 
+  $page = isset($_GET['page']) ? $_GET['page'] : '0';
+  $pager_page_array = explode(',', $page);
+
   try {
     $result = $bc->find('find_all_videos');
   } catch (Exception $error) {
     watchdog('brightcove', 'Finding videos in autocomplete failed.', array(), WATCHDOG_ERROR);
   }
+
+  /*$pager_total[0] = $bc->total_count;
+  $pager_page_array[0] =
+    max(0, min(
+          (int)$pager_page_array[0],
+          ((int)$pager_total[0]) - 1)
+       );
+*/
+
   foreach($result as $video) {
     $item = array();
     $item['title'] = check_plain($video->name);
