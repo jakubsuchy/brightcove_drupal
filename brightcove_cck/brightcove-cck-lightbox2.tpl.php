@@ -16,11 +16,15 @@
  *   - $image_field: The name of the image field used from Media API. Can be thumbnailURL or videoStillURL.
  *   - $destination: URL for the Brightcove video player.
  *   - $video_id: Video ID from Media API.
+ *   - $field_name: CCK Field name.
+ *   - $type_name: Node type.
+ *   - $preset: If printed with imagecache, Imagecache preset name.
  *
- * @see template_preprocess_brightcove_cck_lightbox2_player()
+ * @see theme_brightcove_cck_lightbox2_player()
  */
 ?>
 
 <?php if ($output): ?>
 <?php echo $output; ?>
 <?php endif; ?>
+<?php
