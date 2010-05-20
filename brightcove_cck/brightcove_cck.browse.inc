@@ -22,7 +22,7 @@
 function brightcove_cck_browse() {
   global $pager_from_array, $pager_total, $pager_page_array;
 
-  $items_per_page = 2;
+  $items_per_page = 20;
 
   modalframe_child_js(); //dialog internal area
   drupal_add_css(drupal_get_path('module', 'brightcove_cck') . '/styles/browse.css');
@@ -35,13 +35,33 @@ function brightcove_cck_browse() {
 
   $page = isset($_GET['page']) ? intval($_GET['page']) : '0';
 
+  $params = array();
+  if (isset($_SESSION['brightcove_cck_filter'])) {
+    switch ($_SESSION['brightcove_cck_filter']['search']) {
+      case 'tags':
+        $method = 'find_videos_by_tags';
+        $params = array('or_tags' => $_SESSION['brightcove_cck_filter']['keywords']);
+        break;
+      case 'and_tags':
+        $method = 'find_videos_by_tags';
+        $params = array('and_tags' => $_SESSION['brightcove_cck_filter']['keywords']);
+        break;
+
+      case 'name':
+      default:
+        $method = 'find_videos_by_text';
+        $params = array('text' => join(' ', split(',', $_SESSION['brightcove_cck_filter']['keywords'])));
+        break;
+    }
+  } else {
+    $method = 'find_all_videos';
+  }
 
   try {
-    $params = array(
-        'page_size' => $items_per_page,
-        'page_number' => $page,
-        );
-    $result = $bc->find('find_all_videos', $params);
+    $params['page_size'] = $items_per_page;
+    $params['page_number'] = $page;
+
+    $result = $bc->find($method, $params);
   } catch (Exception $error) {
     watchdog('brightcove', 'Finding videos in autocomplete failed.', array(), WATCHDOG_ERROR);
   }
@@ -55,23 +75,28 @@ function brightcove_cck_browse() {
        );
 
 
-  foreach($result as $video) {
-    $item = array();
-    $item['title'] = check_plain($video->name);
-    $item['video_id'] = $video->id;
-    if (!empty($video->thumbnailURL)) {
-      if (module_exists('imagecache')) {
-        $item['thumbnail'] = theme('imagecache', 'brightcove_browser', brightcove_remote_image($video->thumbnailURL));
+  $items = array();
+  if (count($result)) {
+    foreach($result as $video) {
+      $item = array();
+      $item['title'] = check_plain($video->name);
+      $item['video_id'] = $video->id;
+      if (!empty($video->thumbnailURL)) {
+        if (module_exists('imagecache')) {
+          $item['thumbnail'] = theme('imagecache', 'brightcove_browser', brightcove_remote_image($video->thumbnailURL));
+        } else {
+          $item['thumbnail'] = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
+        }
       } else {
-        $item['thumbnail'] = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
+        $item['thumbnail'] = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE);
       }
-    } else {
-      $item['thumbnail'] = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE);
+      $items[] = $item;
     }
-    $items[] = $item;
   }
   $pager = theme('pager', NULL, $items_per_page, 0);
-  return '<div class="brightcove-browse-table">' . $pager . theme('brightcove_cck_browse_items', $items) . $pager . '</div>';
+  $filter_form = drupal_get_form('brightcove_cck_filter_form');
+
+  return '<div class="brightcove-browse-table">' . $filter_form . $pager . theme('brightcove_cck_browse_items', $items) . $pager . '</div>';
 }
 
 /**

@@ -561,6 +561,71 @@ function brightcove_cck_theme() {
 }
 
 /**
+  * Filter form for video browser.
+  */
+function brightcove_cck_filter_form(&$form_state) {
+  $form['search'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Filter videos'),
+      '#collapsible' => TRUE,
+      '#collapsed' => empty($_SESSION['brightcove_cck_filter']) ? TRUE : FALSE,
+      );
+  $form['search']['keywords'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Keywords'),
+      '#size' => 25,
+      '#default_value' => $_SESSION['brightcove_cck_filter']['keywords'],
+      '#description' => t('Comma separated keywords to search for.'),
+      );
+
+  $form['search']['search'] = array(
+      '#type' => 'radios',
+      '#title' => t('Search in'),
+      '#options' => array('name' => t('Names and descriptions'), 'tags' => t('Tags: at least one of these'), 'and_tags' => t('Tags: all of these')),
+      '#default_value' => isset($_SESSION['brightcove_cck_filter']['search']) ? $_SESSION['brightcove_cck_filter']['search'] : 'name',
+      '#attributes' => array('class' => 'search-radio'),
+      '#description' => t('"Names and descriptions" searches in Video name, short and long descriptions. Tags searches in Video associated tags.'),
+      );
+
+  $form['search']['submit'] = array(
+      '#type' => 'submit',
+      '#name' => 'submit',
+      '#value' => t('Filter'),
+      );
+  $form['search']['reset'] = array(
+      '#type' => 'submit',
+      '#name' => 'reset',
+      '#value' => t('Reset'),
+      );
+
+  return $form;
+}
+
+/**
+  * Submit callback for brightcove_cck_filter_form().
+  *
+  * Set session variables based on selection.
+  *
+  * @see brightcove_cck_browse().
+  */
+function brightcove_cck_filter_form_submit($form, &$form_state) {
+
+  $keywords = $form_state['values']['keywords'];
+  $search = $form_state['values']['search'];
+ 
+  // Reset the form if keywords are empty or reset button was clicked.
+  if ((empty($keywords)) || $form_state['clicked_button']['#name'] == 'reset') {
+    unset($_SESSION['brightcove_cck_filter']);
+    return;
+  }
+
+  // The only thing we do is set session variables based on the selection.
+  // Browse callback will take care of the rest.
+  $_SESSION['brightcove_cck_filter']['keywords'] = $keywords;
+  $_SESSION['brightcove_cck_filter']['search'] = $search;
+}
+
+/**
   * Browse form. Will return a form for one video item.
   * 
   * @see brightcove_cck_forms().

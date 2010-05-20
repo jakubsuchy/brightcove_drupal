@@ -4,3 +4,6 @@
 .brightcove-browse-table table { width: 390px; margin: 0; }
 .brightcove-browse-table tbody { border: 0; }
 .brightcove-browse-table tr.odd, .brightcove-browse-table tr.even { background: none; border: none; }
+
+.search-radio .form-item { display: inline; }
+.brightcove-browse-table .form-item .search-radio, .brightcove-browse-table .form-item label { display:  inline; }
