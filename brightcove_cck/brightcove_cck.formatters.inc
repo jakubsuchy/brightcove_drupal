@@ -99,7 +99,6 @@ function template_preprocess_brightcove_cck_lightbox2(&$vars) {
       'brightcove-cck-lightbox2--' . $vars['field_name'] . '--' . $vars['image_field'],
       'brightcove-cck-lightbox2--' . $vars['type_name'] . '--' . $vars['field_name'] . '--' . $vars['image_field'],
       );
-  dpm($vars);
 }
 
 /**
@@ -124,4 +123,88 @@ function theme_brightcove_cck_formatter_default($element) {
     return theme('brightcove_cck_player', $player, $element['#item']['video_id']);
   }
 }
+
+
+/**
+  * Theme callback for Default thumbnail linked to node formatter.
+  *
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Link HTML code.
+  */
+function theme_brightcove_cck_node_link($element, $image = NULL) {
+  if (!empty($element['#item']['video_id'])) {
+
+    $field = str_replace('lightbox2_player_', '', $element['#formatter']);
+
+    $video = brightcove_video_load($element['#item']['video_id']);
+    if (!isset($video->id)) {
+      if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
+        return theme('brightcove_unavailable_message', filter_xss($unavailable_message));
+      } else if (!isset($video->id)) {
+        return FALSE;
+      }
+    }
+
+    if (!$image) {
+      if (!empty($video->{$field})) {
+        $image = theme('image', $video->{$field}, '', '', NULL, FALSE);
+      } else {
+        $image = t('Play video');
+      }
+    }
+
+    $destination = 'node/' . $element['#node']->nid;
+
+    $output = l($image, $destination, array('attributes' => array('class' => $element['#field_name'], 'title' => check_plain($element['#node']->name)), 'html' => TRUE));
+
+    $video_id = $element['#item']['video_id'];
+
+  }
+  if ($output) {
+    return theme('brightcove_cck_node_link', $output, $video_id, url($destination), $field, $element['#field_name'], $element['#type_name'], $preset);
+  }
+
+}
+
+/**
+  * Template preprocess for brightcove_cck_node_link theme file.
+  * Suggest templates based on a field and type name.
+  */
+function template_preprocess_brightcove_cck_node_link(&$vars) {
+  $vars['template_files'] = array(
+      'brightcove-cck-node-link--' . $vars['image_field'],
+      'brightcove-cck-node-link--' . $vars['field_name'] . '--' . $vars['image_field'],
+      'brightcove-cck-node-link--' . $vars['type_name'] . '--' . $vars['field_name'] . '--' . $vars['image_field'],
+      );
+}
+
+/**
+  * Theme callback for imagecache image linking to node
+  * 
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Link HTML code.
+  */
+function theme_brightcove_cck_node_link_imagecache($element) {
+  $preset_data = str_replace('node_link_imagecache_', '', $element['#formatter']);
+  list($preset, $field) = split('__', $preset_data);
+
+  if (isset($element['#item']['video_id'])) {  
+
+    $video = brightcove_video_load($element['#item']['video_id']);
+    if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
+      return theme('brightcove_unavailable_message', filter_xss($unavailable_message));
+    } else if (!isset($video->id)) {
+      return FALSE;
+    }
+    if (!empty($video->{$field})) {
+      $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
+      return theme('brightcove_cck_formatter_node_link_' . $field, $element, $image, $preset);
+    }
+  }
+}
+
 
