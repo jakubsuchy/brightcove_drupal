@@ -49,7 +49,8 @@ function brightcove_cck_menu() {
       'title' => 'Brightcove Videos Window Player',
       'page callback' => 'brightcove_cck_player',
       'page arguments' => array(1, 2, 3),
-      'access arguments' => array('access content'), // TODO: Security - determine access.
+      'access callback' => 'node_access',
+      'access arguments' => array('view', 1),
       'type' => MENU_CALLBACK,
       );
 
@@ -399,8 +400,6 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
     drupal_add_js($brightcove_cck_settings[$element['#field_name']], 'setting');
   }
 
-
-  // TODO: Button for upload, if upload is enabled and allowed.
 
   if (empty($element[$field_key]['#element_validate'])) {
     $element[$field_key]['#element_validate'] = array();
