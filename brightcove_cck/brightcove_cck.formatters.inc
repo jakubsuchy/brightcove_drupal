@@ -26,8 +26,10 @@ function theme_brightcove_cck_lightbox2_imagecache($element) {
     }
     if (!empty($video->thumbnailURL)) {
       $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
-      return theme('brightcove_cck_formatter_lightbox2_player_' . $field, $element, $image, $preset);
+    } else {
+      $image = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE));
     }
+      return theme('brightcove_cck_formatter_lightbox2_player_' . $field, $element, $image, $preset);
   }
 }
 
@@ -58,7 +60,7 @@ function theme_brightcove_cck_lightbox2_player($element, $image = NULL, $preset 
       if (!empty($video->{$field})) {
         $image = theme('image', $video->{$field}, '', '', NULL, FALSE);
       } else {
-        $image = t('Play video');
+        $image = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE));
       }
     }
     $destination = 'brightcove_cck_player/' . $element['#node']->nid . '/' . $element['#field_name'] . '/' . $element['#item']['#delta'];
