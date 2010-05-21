@@ -27,9 +27,9 @@ function theme_brightcove_cck_lightbox2_imagecache($element) {
     if (!empty($video->thumbnailURL)) {
       $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
     } else {
-      $image = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE));
+      $image = theme('imagecache', $preset, brightcove_get_default_image());
     }
-      return theme('brightcove_cck_formatter_lightbox2_player_' . $field, $element, $image, $preset);
+    return theme('brightcove_cck_formatter_lightbox2_player_' . $field, $element, $image, $preset);
   }
 }
 
@@ -56,11 +56,13 @@ function theme_brightcove_cck_lightbox2_player($element, $image = NULL, $preset 
       }
     }
 
+    $video_name = check_plain($video->name);
+
     if (!$image) {
       if (!empty($video->{$field})) {
         $image = theme('image', $video->{$field}, '', '', NULL, FALSE);
       } else {
-        $image = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE));
+        $image = theme('image', brightcove_get_default_image(), $video_name, $video_name, array('width' => 120, 'height' => 120), FALSE);
       }
     }
     $destination = 'brightcove_cck_player/' . $element['#node']->nid . '/' . $element['#field_name'] . '/' . $element['#item']['#delta'];
@@ -153,7 +155,7 @@ function theme_brightcove_cck_node_link($element, $image = NULL) {
       if (!empty($video->{$field})) {
         $image = theme('image', $video->{$field}, '', '', NULL, FALSE);
       } else {
-        $image = t('Play video');
+        $image = theme('image', brightcove_get_default_image(), $video_name, $video_name, array('width' => 120, 'height' => 120), FALSE);
       }
     }
 
@@ -204,8 +206,10 @@ function theme_brightcove_cck_node_link_imagecache($element) {
     }
     if (!empty($video->{$field})) {
       $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
-      return theme('brightcove_cck_formatter_node_link_' . $field, $element, $image, $preset);
+    } else {
+      $image = theme('imagecache', $preset, brightcove_get_default_image());
     }
+    return theme('brightcove_cck_formatter_node_link_' . $field, $element, $image, $preset);
   }
 }
 

@@ -222,3 +222,10 @@ function brightcove_theme($existing, $type, $theme, $path) {
 function theme_brightcove_unavailable_message($message) {
   return '<div class="video-unavailable">' . $message . '</div>';
 }
+
+/**
+  * Will return a default image for videos without a thumbnail or still image.
+  */
+function brightcove_get_default_image() {
+  return drupal_get_path('module', 'brightcove') . '/images/default-image.png';
+}

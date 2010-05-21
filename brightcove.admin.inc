@@ -36,12 +36,18 @@ function brightcove_admin_settings() {
     '#description' => t('A Brightcove Player ID from BC Studio. Will be used to play all videos.'),
   );
 
-  $form['brightcove_allow_public'] = array(
+/*  $form['brightcove_allow_public'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow public videos'),
     '#default_value' => variable_get('brightcove_allow_public', FALSE),
     '#description' => t('If public videos are allowed, users will be able to mark videos public. Public videos can be seen by anybody in the video browser.'),
-    );
+    );*/
+  $form['brightcove_default_image'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default image'),
+    '#description' => t("In case a video doesn't have a thumbnail or still image, display an image from this path"),
+    '#default_value' => variable_get('brightcove_default_thumbnail', brightcove_get_default_image()),
+  );
   $form['status'] = array(
       '#type' => 'fieldset',
       '#title' => t('Status settings'),
