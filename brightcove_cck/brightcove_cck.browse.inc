@@ -83,7 +83,6 @@ function brightcove_cck_browse() {
       $item['video_id'] = $video->id;
       if (!empty($video->thumbnailURL)) {
         if (module_exists('imagecache')) {
-          dpm(brightcove_remote_image($video->thumbnailURL));
           $item['thumbnail'] = theme('imagecache', 'brightcove_browser', brightcove_remote_image($video->thumbnailURL));
         } else {
           $item['thumbnail'] = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
