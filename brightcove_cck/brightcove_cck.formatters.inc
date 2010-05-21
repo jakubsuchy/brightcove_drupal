@@ -19,11 +19,13 @@ function theme_brightcove_cck_lightbox2_imagecache($element) {
   if (isset($element['#item']['video_id'])) {  
 
     $video = brightcove_video_load($element['#item']['video_id']);
-    if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
-      return theme('brightcove_unavailable_message', filter_xss($unavailable_message));
-    } else if (!isset($video->id)) {
+    $status = brightcove_status($element['#item']['video_id']);
+    if ($status != BRIGHTCOVE_STATUS_COMPLETE && ($message = brightcove_expose_unavailable($status))) {
+      return $message;
+    } else if ($status != BRIGHTCOVE_STATUS_COMPLETE) {
       return FALSE;
     }
+
     if (!empty($video->thumbnailURL)) {
       $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
     } else {
@@ -48,12 +50,11 @@ function theme_brightcove_cck_lightbox2_player($element, $image = NULL, $preset 
     $field = str_replace('lightbox2_player_', '', $element['#formatter']);
 
     $video = brightcove_video_load($element['#item']['video_id']);
-    if (!isset($video->id)) {
-      if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
-        return theme('brightcove_unavailable_message', filter_xss($unavailable_message));
-      } else if (!isset($video->id)) {
-        return FALSE;
-      }
+    $status = brightcove_status($element['#item']['video_id']);
+    if ($status != BRIGHTCOVE_STATUS_COMPLETE && ($message = brightcove_expose_unavailable($status))) {
+      return $message;
+    } else if ($status != BRIGHTCOVE_STATUS_COMPLETE) {
+      return FALSE;
     }
 
     $video_name = check_plain($video->name);
@@ -143,12 +144,11 @@ function theme_brightcove_cck_node_link($element, $image = NULL) {
     $field = str_replace('lightbox2_player_', '', $element['#formatter']);
 
     $video = brightcove_video_load($element['#item']['video_id']);
-    if (!isset($video->id)) {
-      if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
-        return theme('brightcove_unavailable_message', filter_xss($unavailable_message));
-      } else if (!isset($video->id)) {
-        return FALSE;
-      }
+    $status = brightcove_status($element['#item']['video_id']);
+    if ($status != BRIGHTCOVE_STATUS_COMPLETE && ($message = brightcove_expose_unavailable($status))) {
+      return $message;
+    } else if ($status != BRIGHTCOVE_STATUS_COMPLETE) {
+      return FALSE;
     }
 
     if (!$image) {
@@ -199,11 +199,13 @@ function theme_brightcove_cck_node_link_imagecache($element) {
   if (isset($element['#item']['video_id'])) {  
 
     $video = brightcove_video_load($element['#item']['video_id']);
-    if (!isset($video->id) && variable_get('brightcove_check_for_unavailable', TRUE) && ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
-      return theme('brightcove_unavailable_message', filter_xss($unavailable_message));
-    } else if (!isset($video->id)) {
+    $status = brightcove_status($element['#item']['video_id']);
+    if ($status != BRIGHTCOVE_STATUS_COMPLETE && ($message = brightcove_expose_unavailable($status))) {
+      return $message;
+    } else if ($status != BRIGHTCOVE_STATUS_COMPLETE) {
       return FALSE;
     }
+
     if (!empty($video->{$field})) {
       $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
     } else {

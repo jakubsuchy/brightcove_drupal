@@ -88,7 +88,7 @@ function brightcove_cck_browse() {
           $item['thumbnail'] = theme('image', $video->thumbnailURL, '', '', NULL, FALSE);
         }
       } else {
-        $item['thumbnail'] = theme('image', drupal_get_path('module', 'brightcove_cck') . '/images/thumbnail.jpg', '', '', NULL, FALSE);
+        $item['thumbnail'] = theme('image', brightcove_get_default_image(), '', '', array('width' => 120, 'height' => 120), FALSE);
       }
       $items[] = $item;
     }

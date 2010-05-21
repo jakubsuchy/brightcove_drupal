@@ -440,6 +440,8 @@ function brightcove_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
 function brightcove_cck_browser_value($element, $edit = FALSE) {
   $field_key  = $element['#columns'][0];
   $id = $element['#default_value'][$field_key];
+  dpm($element);
+  dpm($_SESSION);
   if ((int) $id > 1) {
     $video = brightcove_video_load($id);
     if ($video->id) {
@@ -786,6 +788,11 @@ function brightcove_cck_upload_form_submit($form, &$form_state) {
 
   // Save new file uploads.
   if ($file = file_save_upload('file_upload', $validators, file_directory_path())) {
+    if ($file->filesize <= 0) {
+      // Some uploaded files had zero size, that's an error.
+      drupal_set_message(t('Uploaded file not found. Are you sure that you uploaded an existing file?'), 'error');
+      return;
+    }
     // Do something with $file here.
 
     $tags = split(',', $form_state['values']['tags']);

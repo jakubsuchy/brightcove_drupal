@@ -18,8 +18,8 @@
   * Module development sponsored by Brightcove, Inc.
   */
 
-// A name of Echove library folder, to be saved in sites/all/libraries.
-define('ECHOVE_LIBRARY', 'echove');
+define('BRIGHTCOVE_STATUS_COMPLETE', 'COMPLETE');
+define('BRIGHTCOVE_STATUS_ERROR', 'ERROR');
 
 /**
   * Settings needed:
@@ -229,3 +229,52 @@ function theme_brightcove_unavailable_message($message) {
 function brightcove_get_default_image() {
   return drupal_get_path('module', 'brightcove') . '/images/default-image.png';
 }
+
+/*
+ * Return the status of a specific video.
+ *
+ * @param string $code
+ * The code for the Brightcove video.
+ * @param boolean $reset
+ * (Optional) If TRUE, then reset the cached status.
+ * @return string
+ * The status code returned by Brightcove.
+ */
+function brightcove_status($code, $reset = FALSE) {
+  static $status;
+  if (!isset($status) || $reset) {
+    $status = array();
+  }
+  if (!isset($status[$code])) {
+    if (($cache = cache_get('brightcove:status:'. $code, 'cache'))) {
+      $status[$code] = $cache->data;
+    }
+    else {
+      $bc = _brightcove_initialize();
+      try {
+        // Get the status of the desired status.
+        $status[$code] = $bc->getStatus('video', $code);
+      }
+      catch (EchoveException $error) {
+        watchdog('brightcove', 'Unhandled error from Brightcove when retrieving the status of video ID %video: %error', array('%video' => $code, '%error' => $error->getMessage()), WATCHDOG_ERROR);
+        $status[$code] = 'ERROR';
+      }
+      cache_set('brightcove:status:'. $code, $status[$code], 'cache', CACHE_TEMPORARY);
+    }
+  }
+  return $status[$code];
+} 
+
+/**
+  * Check if expose unavailability message in case the video is not available.
+  *
+  * @return
+  * Returns a themed message if checks are enabled.
+  */
+function brightcove_expose_unavailable() {
+  if (variable_get('brightcove_check_for_unavailable', TRUE) &&
+     ($unavailable_message = variable_get('brightcove_status_display_unavailable', 'This video is unavailable for the moment.'))) {
+    return theme('brightcove_unavailable_message', $unavailable_message, $status);
+  }
+}
+
