@@ -141,7 +141,7 @@ function theme_brightcove_cck_formatter_default($element) {
 function theme_brightcove_cck_node_link($element, $image = NULL) {
   if (!empty($element['#item']['video_id'])) {
 
-    $field = str_replace('lightbox2_player_', '', $element['#formatter']);
+    $field = str_replace('node_link_', '', $element['#formatter']);
 
     $video = brightcove_video_load($element['#item']['video_id']);
     $status = brightcove_status($element['#item']['video_id']);
