@@ -27,6 +27,7 @@ function theme_brightcove_cck_browse_button($element) {
 function theme_brightcove_cck_browse_item($item) {
   return drupal_get_form('brightcove_cck_browser_form' . $item['video_id'], $item);
 }
+
 /**
   * Theme callback for Brightcove browse table.
   *
