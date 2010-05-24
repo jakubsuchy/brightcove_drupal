@@ -209,8 +209,7 @@ function brightcove_cck_browser_validate($element, &$form_state) {
   if (!empty($value)) {
     // Assign ID to the value.
     // 231289 [id:72431493001]
-    preg_match('/\[id:([^\[]*)\]$/', $value, $matches);
-    $id = $matches[1];
+    $id = brightcove_parse_id($value);
 
     if (is_numeric($id)) {
       // Matched ID, check if the video exists.
