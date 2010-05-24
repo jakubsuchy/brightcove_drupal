@@ -380,7 +380,7 @@ function brightcove_cck_browser_process($element, $edit, $form_state, $form) {
       '#type_name' => $element['#type_name'],
       '#delta' => $element['#delta'],
       '#columns' => $element['#columns'],
-      '#attributes' => array('rel' => $element['#field_name']),
+      '#attributes' => array('rel' => $element['#field_name'], 'class' => 'brightcove-video-field'),
       );
   // Button to browse videos.
   $element['actions']['browse'] = array(
