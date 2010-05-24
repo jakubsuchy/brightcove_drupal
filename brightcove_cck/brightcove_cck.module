@@ -796,15 +796,14 @@ function brightcove_cck_upload_form_submit($form, &$form_state) {
     }
     // Do something with $file here.
 
-    $tags = split(',', $form_state['values']['tags']);
-
     $meta = array(
         'name' => $form_state['values']['title'],
         'shortDescription' => $form_state['values']['short'],
         'longDescription' => $form_state['values']['long'],
         'linkText' => $form_state['values']['linktext'],
         'linkURL' => $form_state['values']['linkurl'],
-#        'tags' => $tags,
+        'referenceId' => _brightcove_cck_generate_id(),
+        'tags' => split(',', $form_state['values']['tags']),
         );
     $bc = _brightcove_initialize();
     try {
@@ -855,3 +854,11 @@ function brightcove_cck_imagecache_default_presets() {
   return $presets;
 }
 
+/**
+  * Generate a reference ID based on Drupal version and User ID.
+  */
+function _brightcove_cck_generate_id() {
+  global $user;
+
+  return "drupal:" . DRUPAL_CORE_COMPATIBILITY . ":" . $user->uid . ":" . $_SERVER['REQUEST_TIME'];
+}
