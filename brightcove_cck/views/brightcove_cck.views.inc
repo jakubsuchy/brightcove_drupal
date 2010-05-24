@@ -61,6 +61,8 @@ function _brightcove_cck_views_data($field) {
       'title short' => t('Video: @name', array('@name' => $text)),
       'click sortable' => FALSE,
       'help' => t('Video: @name - Appears in: @types', array('@types' => check_plain($types[$field['type_name']]['name']), '@name' => $text)),
+      'access callback' => 'content_access',
+      'access arguments' => array('view', $field),
     );
   }
 
@@ -80,6 +82,8 @@ function _brightcove_cck_views_data($field) {
       'title short' => t('Video: @name', array('@name' => $text)),
       'click sortable' => FALSE,
       'help' => t('Video: @name - Appears in: @types', array('@types' => check_plain($types[$field['type_name']]['name']), '@name' => $text)),
+      'access callback' => 'content_access',
+      'access arguments' => array('view', $field),
     );
   }
 
@@ -97,6 +101,8 @@ function _brightcove_cck_views_data($field) {
       'title short' => t('Video: @name', array('@name' => $text)),
       'click sortable' => FALSE,
       'help' => t('Video: @name - Appears in: @types', array('@types' => check_plain($types[$field['type_name']]['name']), '@name' => $text)),
+      'access callback' => 'content_access',
+      'access arguments' => array('view', $field),
     );
   }
 
