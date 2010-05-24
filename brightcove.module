@@ -279,3 +279,121 @@ function brightcove_expose_unavailable() {
   }
 }
 
+
+
+/**
+ * Implementation of hook_media_mover().
+ *
+ * Taken from Media Brightcove module by Aaron Winborn - http:/advomatic.com
+ * http://drupalcode.org/viewvc/drupal/contributions/modules/media_brightcove/media_brightcove.module?revision=1.1.2.14&content-type=text%2Fplain&view=co&pathrev=DRUPAL-6--1
+ *
+ * @param $op is the operator to return
+ * @param $action is which action is being called
+ * @param $verb is the verb being run
+ * @param $configuration is the specific configuration saved for the action for this configuration
+ * @param $file is the file in use
+ * @param $job is the full configuration data currently running
+ */
+function brightcove_media_mover($op = NULL, $action = NULL, $configuration = NULL, &$file=array(), $job = NULL, $nid = NULL) {
+  switch ($op) {
+    case 'name':
+      return t('Brightcove');
+      break;
+
+    case 'actions':
+      return array(
+          'process' => array(
+            1 => t('Upload video to Brightcove.'),
+            ),
+          'storage' => array(
+            2 => t('Upload video to Brightcove.'),
+            ),
+          'complete' => array(
+            3 => t('Attach Brightcove video to a CCK video field'),
+            ),
+          );
+      break;
+
+    case 'complete':
+      module_load_include('inc', 'brightcove', 'brightcove.media_mover');
+      return brightcove_mm_complete_video($file, $configuration);
+      break;
+
+    case 'process':
+    case 'storage':
+      module_load_include('inc', 'brightcove', 'brightcove.media_mover');
+      return brightcove_mm_upload_video($file, $configuration);
+      break;
+
+    case 'config':
+      switch ($action) {
+        case '1':
+        case '2':
+          module_load_include('inc', 'brightcove', 'brightcove.media_mover');
+          return brightcove_mm_config($configuration);
+          break;
+        case '3':
+          module_load_include('inc', 'brightcove', 'brightcove.media_mover');
+          return brightcove_mm_complete_config($configuration);
+          break;
+      }
+      break;
+  }
+}
+
+/**
+  * Upload video to Brightcove.
+  *
+  * @param $path
+  * Filepath to video file.
+  * @param $meta
+  * Meta data array. Required values:
+  *     array(
+  *       'name' => 'video name',
+  *       'shortDescription' => 'short description',
+  *     );
+  * @see http://support.brightcove.com/en/docs/media-api-objects-reference#Video
+  */
+function brightcove_upload_video($path, $meta) {
+  if (empty($meta['name'])) {
+    $meta['name'] = t('Video');
+  }
+  if (empty($meta['shortDescription'])) {
+    $meta['shortDescription'] = t('Short Description');
+  }
+  $bc = _brightcove_initialize();
+  try {
+    $id = $bc->createMedia('video', $path, $meta);
+  } catch (Exception $error) {
+    drupal_set_message(t('Video upload to Brightcove failed. Error: @error', array('@error' => $error)), 'error');
+    return;
+  }
+  return $id;
+}
+
+/**
+  * Parse a field value in form of "title [id:123]" and return 123
+  *
+  * @param $id
+  *  Video ID in form of "title [id:123]".
+  * @return
+  *  Int value of the ID.
+  */
+function brightcove_parse_id($id) {
+    preg_match('/\[id:([^\[]*)\]$/', $id, $matches);
+    return $matches[1];
+}
+
+/**
+  * Generate a reference ID based on Drupal version and User ID.
+  *
+  * @param $account
+  * Account UID that is responsible for this video. If NULL, logged in user is used.
+  */
+function brightcove_generate_reference($account = NULL) {
+  global $user;
+  if (!isset($account)) {
+    $account = $user->uid;
+  }
+  return "drupal:" . DRUPAL_CORE_COMPATIBILITY . ":" . $account . ":" . $_SERVER['REQUEST_TIME'];
+}

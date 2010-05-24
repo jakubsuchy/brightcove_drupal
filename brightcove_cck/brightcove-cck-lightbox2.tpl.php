@@ -27,4 +27,3 @@
 <?php if ($output): ?>
 <?php echo $output; ?>
 <?php endif; ?>
-<?php
