@@ -262,6 +262,16 @@ function brightcove_cck_field_formatter_info() {
       'field types' => array('brightcove_video'),
       'multiple values' => CONTENT_HANDLE_CORE,
       );
+  $formatters['node_image_videoStillURL'] = array(
+      'label' => t('Default still image'),
+      'field types' => array('brightcove_video'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      );
+  $formatters['node_image_thumbnailURL'] = array(
+      'label' => t('Default thumbnail'),
+      'field types' => array('brightcove_video'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      );
 
   if (module_exists('lightbox2')) {
     $formatters['lightbox2_player_videoStillURL'] = array(
@@ -301,6 +311,17 @@ function brightcove_cck_field_formatter_info() {
           'field types' => array('brightcove_video'),
           'multiple values' => CONTENT_HANDLE_CORE,
           );
+      $formatters['node_image_imagecache_' . $preset['presetname'] . '__videoStillURL'] = array(
+          'label' => t('Imagecache @preset still image', array('@preset' => $preset['presetname'])),
+          'field types' => array('brightcove_video'),
+          'multiple values' => CONTENT_HANDLE_CORE,
+          );
+      $formatters['node_image_imagecache_' . $preset['presetname'] . '__thumbnailURL'] = array(
+          'label' => t('Imagecache @preset thumbnail', array('@preset' => $preset['presetname'])),
+          'field types' => array('brightcove_video'),
+          'multiple values' => CONTENT_HANDLE_CORE,
+          );
+
     }
   }
   return $formatters;
@@ -488,6 +509,12 @@ function brightcove_cck_theme() {
         'patern' => 'brightcove_cck_node_link__',
         'preprocess functions' => array('template_preprocess_brightcove_cck_node_link'),
         ),
+      'brightcove_cck_node_image' => array(
+        'arguments' => array('output' => NULL, 'video_id' => NULL, 'nid' => NULL, 'image_field' => NULL, 'field_name' => NULL, 'type_name' => NULL),
+        'template' => 'brightcove-cck-node-image',
+        'patern' => 'brightcove_cck_node_image__',
+        'preprocess functions' => array('template_preprocess_brightcove_cck_node_image'),
+        ),
       'brightcove_cck_lightbox2_imagecache' => array(
           'arguments' => array('output' => NULL, 'video_id' => NULL, 'video_width' => NULL, 'video_height' => NULL, 'lightbox2_width' => NULL, 'lightbox2_height' => NULL, 'destination' => NULL, 'image_field' => NULL, 'field_name' => NULL, 'type_name' => NULL),
           'template' => 'brightcove-cck-lightbox2-imagecache',
@@ -517,6 +544,16 @@ function brightcove_cck_theme() {
   $theme['brightcove_cck_formatter_node_link_videoStillURL'] = array(
       'arguments' => array('element' => NULL, 'image' => NULL, 'preset' => NULL),
       'function' => 'theme_brightcove_cck_node_link',
+      'file' => 'brightcove_cck.formatters.inc',
+      );
+  $theme['brightcove_cck_formatter_node_image_thumbnailURL'] = array(
+      'arguments' => array('element' => NULL, 'image' => NULL, 'preset' => NULL),
+      'function' => 'theme_brightcove_cck_node_image',
+      'file' => 'brightcove_cck.formatters.inc',
+      );
+  $theme['brightcove_cck_formatter_node_image_videoStillURL'] = array(
+      'arguments' => array('element' => NULL, 'image' => NULL, 'preset' => NULL),
+      'function' => 'theme_brightcove_cck_node_image',
       'file' => 'brightcove_cck.formatters.inc',
       );
 
@@ -555,6 +592,16 @@ function brightcove_cck_theme() {
       $theme['brightcove_cck_formatter_node_link_imagecache_' . $preset['presetname'] . '__videoStillURL'] = array(
           'arguments' => array('element'),
           'function' => 'theme_brightcove_cck_node_link_imagecache',
+          'file' => 'brightcove_cck.formatters.inc',
+          );
+      $theme['brightcove_cck_formatter_node_image_imagecache_' . $preset['presetname'] . '__thumbnailURL'] = array(
+          'arguments' => array('element'),
+          'function' => 'theme_brightcove_cck_node_image_imagecache',
+          'file' => 'brightcove_cck.formatters.inc',
+          );
+      $theme['brightcove_cck_formatter_node_image_imagecache_' . $preset['presetname'] . '__videoStillURL'] = array(
+          'arguments' => array('element'),
+          'function' => 'theme_brightcove_cck_node_image_imagecache',
           'file' => 'brightcove_cck.formatters.inc',
           );
 

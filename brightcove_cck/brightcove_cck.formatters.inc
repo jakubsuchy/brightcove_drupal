@@ -215,4 +215,88 @@ function theme_brightcove_cck_node_link_imagecache($element) {
   }
 }
 
+/**
+  * Theme callback for Default thumbnail.
+  *
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Link HTML code.
+  */
+function theme_brightcove_cck_node_image($element, $image = NULL) {
+  if (!empty($element['#item']['video_id'])) {
+
+    $field = str_replace('node_image_', '', $element['#formatter']);
+
+    $video = brightcove_video_load($element['#item']['video_id']);
+    $status = brightcove_status($element['#item']['video_id']);
+    if ($status != BRIGHTCOVE_STATUS_COMPLETE && ($message = brightcove_expose_unavailable($status))) {
+      return $message;
+    } else if ($status != BRIGHTCOVE_STATUS_COMPLETE) {
+      return FALSE;
+    }
+
+    if (!$image) {
+      if (!empty($video->{$field})) {
+        $image = theme('image', $video->{$field}, '', '', NULL, FALSE);
+      } else {
+        $image = theme('image', brightcove_get_default_image(), $video_name, $video_name, array('width' => 120, 'height' => 120), FALSE);
+      }
+    }
+
+    $output = $image;
+
+    $video_id = $element['#item']['video_id'];
+    $nid = $element['#node']->nid;
+
+  }
+  if ($output) {
+    return theme('brightcove_cck_node_image', $output, $video_id, $nid, $field, $element['#field_name'], $element['#type_name']);
+  }
+
+}
+
+/**
+  * Template preprocess for brightcove_cck_node_image theme file.
+  * Suggest templates based on a field and type name.
+  */
+function template_preprocess_brightcove_cck_node_image(&$vars) {
+  $vars['template_files'] = array(
+      'brightcove-cck-node-image--' . $vars['image_field'],
+      'brightcove-cck-node-image--' . $vars['field_name'] . '--' . $vars['image_field'],
+      'brightcove-cck-node-image--' . $vars['type_name'] . '--' . $vars['field_name'] . '--' . $vars['image_field'],
+      );
+}
+
+/**
+  * Theme callback for imagecache image
+  * 
+  * @param $element
+  *  Element with the Video ID.
+  * @return
+  *  Link HTML code.
+  */
+function theme_brightcove_cck_node_image_imagecache($element) {
+  $preset_data = str_replace('node_image_imagecache_', '', $element['#formatter']);
+  list($preset, $field) = split('__', $preset_data);
+
+  if (isset($element['#item']['video_id'])) {  
+
+    $video = brightcove_video_load($element['#item']['video_id']);
+    $status = brightcove_status($element['#item']['video_id']);
+    if ($status != BRIGHTCOVE_STATUS_COMPLETE && ($message = brightcove_expose_unavailable($status))) {
+      return $message;
+    } else if ($status != BRIGHTCOVE_STATUS_COMPLETE) {
+      return FALSE;
+    }
+
+    if (!empty($video->{$field})) {
+      $image = theme('imagecache', $preset, brightcove_remote_image($video->{$field}));
+    } else {
+      $image = theme('imagecache', $preset, brightcove_get_default_image());
+    }
+    return theme('brightcove_cck_formatter_node_image_' . $field, $element, $image);
+  }
+}
+
 
