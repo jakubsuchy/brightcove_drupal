@@ -20,7 +20,7 @@ function brightcove_cck_menu() {
   $items['brightcove_cck/autocomplete/%/%/%'] = array(
       'title' => 'Brightcove CCK autocomplete',
       'page callback' => 'brightcove_cck_autocomplete',
-      'page arguments' => array(2, 5),
+      'page arguments' => array(2, 4),
       'access callback' => 'brightcove_cck_browse_access',
       'access arguments' => array(3, 2),
       'file' => 'brightcove_cck.browse.inc',
