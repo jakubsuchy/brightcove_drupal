@@ -18,12 +18,14 @@ function brightcove_mm_upload_video($file, $configuration) {
   $tags = '';
   $node = NULL;
 
+  $length = isset($configuration['brightcove_mm_description_length']) ? $configuration['brightcove_mm_description_length'] : 300;
+
   if ($file['nid']) {
     $node = node_load($file['nid']);
     if ($node) {
       $title = $node->title;
       // Todo change 300 to some configurable string.
-      if ($body = truncate_utf8(strip_tags($node->body), 300, TRUE, TRUE)) {
+      if ($body = truncate_utf8(strip_tags($node->body), $length, TRUE, TRUE)) {
         $description = $body;
       }
     }
@@ -71,6 +73,13 @@ function brightcove_mm_config($configuration) {
       '#type' => 'textarea',
       '#default_value' => $configuration['brightcove_mm_default_description'] ? $configuration['brightcove_mm_default_description'] : 'Default description',
       '#description' => t('Videos which do not belong to a node will be given this description.'),
+      );
+  $form['brightcove_mm_config']['brightcove_mm_description_length'] = array(
+      '#title' => t('Description length'),
+      '#description' => t('If description is inherited from a node, how many characters from body to take?'),
+      '#type' => 'textfield',
+      '#size' => 10,
+      '#default_value' => $configuration['brightcove_mm_description_length'] ? $configuration['brightcove_mm_description_length'] : 300,
       );
 
   return $form;

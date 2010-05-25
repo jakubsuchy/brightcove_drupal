@@ -10,7 +10,6 @@ Drupal.behaviors.brightcove_cck_buttons = function(context) {
   $('.brightcove-cck-browse-button', context).click(Drupal.brightcove_cck.actions.browse);
   $('.brightcove-cck-upload-button', context).click(Drupal.brightcove_cck.actions.upload);
   $('.brightcove-cck-remove-button', context).click(Drupal.brightcove_cck.actions.remove);
-  // TODO: There should be a better selector for this - how do we add a class to cck element? (attributes didn't work)
   $('.form-text.brightcove-video-field').change(Drupal.brightcove_cck.actions.change);
 };
 
