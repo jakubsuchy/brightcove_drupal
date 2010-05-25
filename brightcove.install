@@ -22,6 +22,12 @@ function brightcove_requirements($phase) {
     }
   }
 
+  if (!function_exists('curl_init')) {
+    $requirements['curl']['title'] = $t('cURL');
+    $requirements['curl']['description'] = $t('Echove SDK requires a cURL library. You should install it on your server.');
+    $requirements['curl']['severity'] = REQUIREMENT_ERROR;
+    $requirements['curl']['value'] = $t(': missing');
+  }
 
   if (!$path) {
     $requirements['echove']['title'] = $t('Echove SDK');
