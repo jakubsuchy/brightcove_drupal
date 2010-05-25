@@ -3,12 +3,12 @@
 
 /**
  * @file brightcove-cck-node-image.tpl.php
- * Image linked to node theme implementation.
+ * Image theme implementation.
  *
- * This template is used when viewing a Brightcove video with a thumbnail or videoStill image linking to node.
+ * This template is used when viewing a Brightcove video with a thumbnail or videoStill image without a link.
  *
  * Available variables:
- *   - $output: Formatted image with a link to Lightbox2, ready for printing.
+ *   - $output: Formatted image, ready for printing.
  *   - $image_field: The name of the image field used from Media API. Can be thumbnailURL or videoStillURL.
  *   - $nid: Node NID.
  *   - $video_id: Video ID from Media API.
