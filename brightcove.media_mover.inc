@@ -24,7 +24,6 @@ function brightcove_mm_upload_video($file, $configuration) {
     $node = node_load($file['nid']);
     if ($node) {
       $title = $node->title;
-      // Todo change 300 to some configurable string.
       if ($body = truncate_utf8(strip_tags($node->body), $length, TRUE, TRUE)) {
         $description = $body;
       }
